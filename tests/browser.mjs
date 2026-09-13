@@ -38,6 +38,18 @@ try {
   assert.ok(await page.locator('.leaf-flight').count() > 0);
   assert.equal(await page.locator('.tree-marker').count(), 0);
   assert.equal(await page.locator('.tree-heart').count(), 1);
+  assert.ok(await page.locator('.tree-heart').isHidden());
+  await page.getByRole('button', { name: 'Take a breathing break' }).click();
+  await page.locator('.breathing-page').waitFor();
+  await page.getByRole('button', { name: 'Return to the tree', exact: true }).click();
+  await page.locator('#worry').waitFor();
+  assert.ok(await page.locator('.tree-heart').isHidden());
+  await page.getByRole('button', { name: 'Take a breathing break' }).click();
+  await page.locator('.breathing-page').waitFor();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('tell-the-tree.v1')).breathingCompleted === true);
+  await page.getByRole('button', { name: 'Return to the tree', exact: true }).click();
+  await page.locator('#worry').waitFor();
+  await page.reload();
   assert.ok(await page.locator('.tree-heart').isVisible());
   await page.screenshot({ path: 'test-results/tree-desktop.png', fullPage: true });
   await page.locator('.tree-heart').focus();
@@ -138,7 +150,8 @@ try {
   await m.locator('#worry').fill('<img src=x onerror=alert(1)>');
   await m.getByRole('button', { name: 'Give it to the tree', exact: true }).click();
   assert.equal(await m.locator('.leaf-flight').count(), 0);
-  await m.locator('.tree-heart').tap();
+  assert.ok(await m.locator('.tree-heart').isHidden());
+  await m.locator('.tree-summary [data-do="leaves"]').tap();
   assert.equal(await m.locator('.collection-text img').count(), 0);
   await m.locator('.worry-card').tap();
   assert.equal(await m.locator('blockquote img').count(), 0);

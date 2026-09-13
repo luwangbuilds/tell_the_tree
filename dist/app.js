@@ -59,6 +59,7 @@ let breathInterval;
 let breathElapsed = 0;
 let breathStart = 0;
 let breathPaused = false;
+let breathCompletionAttempted = false;
 let lastPhase = '';
 let toastTimer;
 let focusBeforeDialog;
@@ -98,7 +99,7 @@ function render() {
 
 function treePage() {
   return `<section class="tree-page page-enter"><div class="tree-heading"><span class="eyebrow">YOUR QUIET LITTLE CORNER</span><h1>A little space to let go.</h1><p class="subtitle">A little space for what is on your mind.</p><span class="gold-line"></span></div>
-    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /></div><button class="tree-heart" ${garden.leaves.length || garden.flowers.length ? '' : 'hidden'} data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button>${garden.harvests.length ? `<button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div>` : ''}</div>
+    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /></div><button class="tree-heart" ${garden.breathingCompleted && (garden.leaves.length || garden.flowers.length) ? '' : 'hidden'} data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button>${garden.harvests.length ? `<button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div>` : ''}</div>
     <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">Tell a worry to the tree</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div><button class="add-leaf" type="submit">Give it to the tree ${icon('check')}</button></form><button class="primary full" data-do="breathe">Take a breathing break ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
     </section>`;
 }
@@ -131,12 +132,17 @@ function breathingPage() {
   return `<section class="breathing-page page-enter"><div class="breathing-heading"><span class="eyebrow">A SOFTER RHYTHM</span><h1>Come back to your breath.</h1></div><div class="breath-orbit" id="breath-orbit"><div class="watercolor-rings"><i></i><i></i><i></i>${lotus}</div><div class="breath-copy"><p id="phase-label" aria-live="polite">Breathe in</p><span id="breath-number" aria-hidden="true">4</span><span id="breath-status">Slowly, through your nose</span></div></div><div class="breath-sequence"><span data-phase="inhale">Inhale <b>4</b></span><i>·</i><span data-phase="hold">Hold <b>7</b></span><i>·</i><span data-phase="exhale">Exhale <b>8</b></span></div><button class="pause-button" data-do="pause" aria-label="Pause breathing">${icon('pause')}</button><div class="breathing-actions"><button class="primary" data-do="tree">Return to the tree ${icon('arrow')}</button><button class="text-button" data-do="finish">Finish for now</button></div></section>`;
 }
 function startBreathing() {
+  breathCompletionAttempted = false;
   breathElapsed = 0; breathStart = performance.now(); breathPaused = document.hidden; lastPhase = '';
   tickBreath(); breathInterval = setInterval(tickBreath, 100);
   if (breathPaused) updatePauseButton();
 }
 function tickBreath() {
   const seconds = (breathElapsed + (breathPaused ? 0 : performance.now() - breathStart)) / 1000;
+  if (seconds >= 19 && !garden.breathingCompleted && !breathCompletionAttempted) {
+    breathCompletionAttempted = true;
+    commit({ ...garden, breathingCompleted: true });
+  }
   const phase = breathingPhase(seconds);
   const label = document.querySelector('#phase-label'); if (!label) return;
   if (phase.key !== lastPhase) { label.textContent = phase.label; lastPhase = phase.key; }
@@ -221,7 +227,9 @@ function animateNewLeaf() {
   const tree = document.querySelector('.tree-heart');
   if (!button || !tree) return;
   const start = button.getBoundingClientRect();
-  const end = tree.getBoundingClientRect();
+  const scene = document.querySelector('.tree-scene');
+  const sceneRect = scene.getBoundingClientRect();
+  const end = tree.hidden ? { left: sceneRect.left + sceneRect.width * .43, top: sceneRect.top + sceneRect.height * .72, width: 0, height: 0, bottom: sceneRect.top + sceneRect.height * .72 } : tree.getBoundingClientRect();
   const x = start.left + start.width / 2 + scrollX;
   const y = start.top + start.height / 2 + scrollY;
   const dx = end.left + end.width / 2 + scrollX - x;
@@ -238,7 +246,7 @@ function animateNewLeaf() {
     { transform: pose(dx, dy, .6, 15), opacity: 1, offset: .88 },
     { transform: pose(dx, dy, .15, 15), opacity: 0, offset: 1 },
   ], { duration: 1700, easing: 'ease-in-out', fill: 'forwards' });
-  if (end.top < 80 || end.bottom > innerHeight - 100) tree.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (end.top < 80 || end.bottom > innerHeight - 100) (tree.hidden ? scene : tree).scrollIntoView({ behavior: 'smooth', block: 'center' });
   animation.finished.then(() => leaf.remove(), () => leaf.remove());
 }
 function effect(type, sourceRect) {
@@ -268,7 +276,7 @@ document.addEventListener('submit', event => {
     document.querySelector('#word-count').textContent = '0 / 1000';
     document.querySelector('.tree-summary [data-do="leaves"]').innerHTML = icon('leaf') + ' ' + countText(garden.leaves.length, 'worry', 'worries');
     document.querySelector('.add-leaf').focus({ preventScroll: true });
-    document.querySelector('.tree-heart').hidden = false;
+    document.querySelector('.tree-heart').hidden = !garden.breathingCompleted;
     animateNewLeaf();
     toast('Your worry has a place to rest.');
   }

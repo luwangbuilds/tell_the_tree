@@ -19,6 +19,7 @@ try {
     garden = m.addWorry(garden, 'Where should I begin?');
     garden = m.addWorry(garden, 'Making room for everything this week');
     garden = m.addWorry(garden, 'Finding the courage to ask for help');
+    garden.breathingCompleted = true;
     localStorage.setItem(m.STORAGE_KEY, JSON.stringify(garden));
   });
   await page.reload();

@@ -44,7 +44,7 @@ export function decodeGarden(raw) {
   const record = item => item && typeof item.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) && typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt));
   const string = item => typeof item === 'string' && item.trim().length > 0 && item.length <= 1000;
   const action = item => record(item) && string(item.action) && (item.worry === undefined || string(item.worry));
-  if (!value || value.version !== 1 || !Array.isArray(value.leaves) || !Array.isArray(value.flowers) || !Array.isArray(value.harvests)
+  if (!value || value.version !== 1 || (value.breathingCompleted !== undefined && typeof value.breathingCompleted !== 'boolean') || !Array.isArray(value.leaves) || !Array.isArray(value.flowers) || !Array.isArray(value.harvests)
     || !value.leaves.every(item => record(item) && string(item.text)) || !value.flowers.every(action)
     || !value.harvests.every(item => record(item) && Array.isArray(item.actions) && item.actions.length >= 1 && item.actions.every(action))) {
     throw new Error('Your saved garden could not be read. It has not been changed.');
