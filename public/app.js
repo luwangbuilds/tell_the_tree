@@ -53,7 +53,7 @@ catch (error) { loadError = error.message || 'Your browser could not open saved 
 const routes = ['tree', 'garden', 'breathe', 'treasure', 'finish'];
 let view = routes.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'tree';
 let branchPage = 0;
-const branchSlots = [[34, 12], [58, 10], [80, 22], [15, 28], [37, 35], [65, 33], [18, 57], [82, 59]];
+const branchSlots = [[35, 21], [55, 17], [74, 27], [21, 31], [37, 38], [65, 39], [24, 51], [79, 51]];
 let draft = '';
 let breathInterval;
 let breathElapsed = 0;
@@ -121,7 +121,7 @@ function collectionPage() {
   const visible = entries.slice(start, start + branchSlots.length);
   return `<section class="collection-page bodhi-page"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><span class="eyebrow">ONE SMALL STEP, SOMETHING GROWS</span><h1>Your leaves &amp; flowers.</h1><p class="subtitle">Tap a glowing leaf to find a little clarity.</p></div>
     <div class="bodhi-legend"><span>${icon('leaf')} ${countText(garden.leaves.length, 'worry leaf', 'worry leaves')}</span><span>${icon('flower')} ${countText(garden.flowers.length, 'intention flower')}</span></div>
-    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-dappled-green.webp" alt="An impressionist Bodhi tree with a canopy of dappled green brushstrokes" width="1448" height="1086" />
+    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-sparse-reference.jpg" alt="A softly illustrated tree with twisting branches, sparse green leaves and spreading roots" width="794" height="811" />
       ${visible.map((item, index) => {
         const [x, y] = branchSlots[index];
         const isLeaf = item.kind === 'leaf';
