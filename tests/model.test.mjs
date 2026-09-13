@@ -1,0 +1,95 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { blankGarden, addWorry, releaseWorry, chooseAction, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from '../public/model.js';
+
+test('worries become actions without retaining original worry text', () => {
+  const original = blankGarden();
+  const a = addWorry(original, '  A private worry  ');
+  assert.equal(a.leaves[0].text, 'A private worry');
+  assert.equal(original.leaves.length, 0);
+  const b = chooseAction(a, a.leaves[0].id, 'Write one sentence');
+  assert.equal(b.leaves.length, 0);
+  assert.equal(b.flowers[0].action, 'Write one sentence');
+  assert.ok(!JSON.stringify(b).includes('A private worry'));
+  assert.throws(() => chooseAction(b, a.leaves[0].id, 'Again'));
+});
+test('releasing removes only the selected worry', () => {
+  const a = addWorry(addWorry(blankGarden(), 'Keep this'), 'Let this go');
+  const b = releaseWorry(a, a.leaves[1].id);
+  assert.deepEqual(b.leaves.map(l => l.text), ['Keep this']);
+  assert.throws(() => releaseWorry(b, a.leaves[1].id));
+});
+test('harvest takes only selected flowers, preserves the others and cannot repeat', () => {
+  let g = blankGarden();
+  assert.throws(() => harvestFlowers(g));
+  for (let i = 0; i < 7; i++) {
+    g = addWorry(g, `Worry ${i}`);
+    g = chooseAction(g, g.leaves[0].id, `Action ${i}`);
+  }
+  g = addWorry(g, 'Still here');
+  const selected = [g.flowers[1].id, g.flowers[4].id];
+  const result = harvestFlowers(g, selected);
+  assert.deepEqual(result.flowers, g.flowers.filter(f => !selected.includes(f.id)));
+  assert.equal(result.harvests.length, 1);
+  assert.deepEqual(result.harvests[0].actions, [g.flowers[1], g.flowers[4]]);
+  assert.equal(result.leaves[0].text, 'Still here');
+  assert.throws(() => harvestFlowers(result, selected));
+  assert.equal(g.flowers.length, 7);
+  assert.deepEqual(decodeGarden(JSON.stringify(result)), result);
+});
+test('one flower can become a diamond and reload alongside legacy five-flower diamonds', () => {
+  let g = blankGarden();
+  for (let i = 0; i < 5; i++) {
+    g = addWorry(g, `Worry ${i}`);
+    g = chooseAction(g, g.leaves[0].id, `Action ${i}`);
+  }
+  g = harvestFlowers(g, g.flowers.map(f => f.id));
+  g = addWorry(g, 'A new worry');
+  g = chooseAction(g, g.leaves[0].id, 'A single small step');
+  const result = harvestFlowers(g, [g.flowers[0].id]);
+  assert.equal(result.flowers.length, 0);
+  assert.deepEqual(result.harvests.map(h => h.actions.length), [1, 5]);
+  assert.deepEqual(decodeGarden(JSON.stringify(result)), result);
+  result.harvests[0].actions = [];
+  assert.throws(() => decodeGarden(JSON.stringify(result)));
+});
+test('empty, duplicate, and stale selections cannot harvest any flowers', () => {
+  let g = addWorry(blankGarden(), 'A worry');
+  g = chooseAction(g, g.leaves[0].id, 'Take a walk');
+  const flowerId = g.flowers[0].id;
+  for (const selection of [undefined, [], [flowerId, flowerId], ['missing'], [flowerId, 'missing']]) {
+    assert.throws(() => harvestFlowers(g, selection));
+    assert.equal(g.flowers.length, 1);
+    assert.equal(g.harvests.length, 0);
+  }
+});
+test('a diamond can be deleted without changing other garden records', () => {
+  let garden = blankGarden();
+  for (let i = 0; i < 5; i++) {
+    garden = addWorry(garden, `Worry ${i}`);
+    garden = chooseAction(garden, garden.leaves[0].id, `Action ${i}`);
+  }
+  garden = harvestFlowers(garden, garden.flowers.map(f => f.id));
+  const diamondId = garden.harvests[0].id;
+  const result = deleteHarvest(garden, diamondId);
+  assert.equal(result.harvests.length, 0);
+  assert.throws(() => deleteHarvest(result, diamondId));
+});
+test('empty and oversized input is rejected', () => {
+  for (const text of ['', '   ', 'x'.repeat(1001), null]) assert.throws(() => addWorry(blankGarden(), text));
+  const g = addWorry(blankGarden(), 'Worry');
+  assert.throws(() => chooseAction(g, g.leaves[0].id, '  '));
+});
+test('corrupt saved data is rejected instead of silently reset', () => {
+  for (const raw of ['bad json', '{}', '{"version":2}', '{"version":1,"leaves":[{}],"flowers":[],"harvests":[]}']) assert.throws(() => decodeGarden(raw));
+});
+test('4-7-8 boundaries and repeated cycles', () => {
+  assert.equal(breathingPhase(0).remaining, 4);
+  assert.equal(breathingPhase(3.99).remaining, 1);
+  assert.equal(breathingPhase(4).key, 'hold');
+  assert.equal(breathingPhase(4).remaining, 7);
+  assert.equal(breathingPhase(11).key, 'exhale');
+  assert.equal(breathingPhase(11).remaining, 8);
+  assert.equal(breathingPhase(19).key, 'inhale');
+  assert.equal(breathingPhase(38).remaining, 4);
+});

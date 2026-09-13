@@ -1,0 +1,9 @@
+# Airy spring tree background
+
+Edited with the built-in image generation tool. Unused exploration asset: `public/assets/spring-tree-airy.webp` (format-only WebP conversion, quality 90). Rolled back at the user's request; the tree page and image preload use the original `public/assets/spring-tree.webp`.
+
+The edit reduces decorative blossoms and foliage to expose branches and sky, giving the interactive botanical leaves and intention flowers more visual space. The percentages below are generation targets, not measured counts.
+
+## Final prompt
+
+Use case: precise-object-edit. Asset type: production background image for the Tell the Tree web app. Input image 1 is the edit target, not just a style reference. Edit only the natural tree foliage and blossom density. Remove approximately 90% of the existing pink blossoms so only a few tiny scattered blossoms remain near outer branch tips. Reduce existing green leaf density by approximately 55–60%, opening substantial airy gaps between small natural leaf clusters, showing more of the existing brown branches and pale blue sky. Especially clear the central and middle canopy so separately overlaid interactive leaves and flowers will read clearly. Keep the tree alive, fresh and inviting, like early spring; retain delicate sunlit small leaves, not a bare winter tree. Maintain the exact same trunk, root shape, primary and secondary branch geometry and positions, tree silhouette, camera, portrait 4:5 composition, grass foreground, horizon, warm soft morning light, pale sky and near-photoreal rendering of the input. Do not invent or move branches. Natural background leaves and the few tiny blossoms should have softer, slightly quieter contrast, with no bright white floral masses. Do not add large foreground leaves, UI markers, icons, buttons, text, a chest, objects, sparkles or halos. Deliver only the edited full-bleed background artwork, portrait 4:5.
