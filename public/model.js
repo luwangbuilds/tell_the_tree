@@ -20,7 +20,7 @@ export function chooseAction(garden, leafId, action) {
   return {
     ...garden,
     leaves: garden.leaves.filter(item => item.id !== leafId),
-    flowers: [...garden.flowers, { id: leaf.id, action: clean(action), createdAt: now() }],
+    flowers: [...garden.flowers, { id: leaf.id, worry: leaf.text, action: clean(action), createdAt: now() }],
   };
 }
 export function harvestFlowers(garden, flowerIds) {
@@ -43,7 +43,7 @@ export function decodeGarden(raw) {
   const value = JSON.parse(raw);
   const record = item => item && typeof item.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) && typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt));
   const string = item => typeof item === 'string' && item.trim().length > 0 && item.length <= 1000;
-  const action = item => record(item) && string(item.action);
+  const action = item => record(item) && string(item.action) && (item.worry === undefined || string(item.worry));
   if (!value || value.version !== 1 || !Array.isArray(value.leaves) || !Array.isArray(value.flowers) || !Array.isArray(value.harvests)
     || !value.leaves.every(item => record(item) && string(item.text)) || !value.flowers.every(action)
     || !value.harvests.every(item => record(item) && Array.isArray(item.actions) && item.actions.length >= 1 && item.actions.every(action))) {

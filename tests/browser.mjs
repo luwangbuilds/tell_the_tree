@@ -33,7 +33,7 @@ try {
   await page.goto(base);
   for (let i = 0; i < 6; i++) {
     await page.locator('#worry').fill(`Worry ${i}`);
-    await page.getByRole('button', { name: 'Make a leaf', exact: true }).click();
+    await page.getByRole('button', { name: 'Give it to the tree', exact: true }).click();
   }
   assert.ok(await page.locator('.leaf-flight').count() > 0);
   assert.equal(await page.locator('.tree-marker').count(), 0);
@@ -55,6 +55,7 @@ try {
     await page.getByRole('button', { name: /Yes, a small step/ }).click();
     await page.locator('#action-text').fill(`Small action ${i}`);
     await page.getByRole('button', { name: 'Let it bloom', exact: true }).click();
+    assert.ok(await page.locator('.bloom-effect').count() > 0);
     assert.equal(await page.getByRole('button', { name: /Worry leaves/ }).getAttribute('aria-pressed'), 'true');
     assert.equal(await page.locator('.worry-card').count(), 5 - i);
     assert.equal((await savedGarden()).flowers.length, i);
@@ -87,7 +88,8 @@ try {
   let saved = await savedGarden();
   assert.deepEqual(saved.harvests[0].actions.map(a => a.action), ['Small action 1', 'Small action 3']);
   assert.deepEqual(saved.flowers.map(f => f.action), ['Small action 2', 'Small action 4', 'Small action 5']);
-  assert.ok(!JSON.stringify(saved).includes('Worry'));
+  assert.deepEqual(saved.harvests[0].actions.map(a => a.worry), ['Worry 1', 'Worry 3']);
+  assert.ok(!JSON.stringify(saved).includes('Worry 0'));
   await page.getByRole('checkbox', { name: 'Select intention: Small action 2', exact: true }).check();
   await page.locator('#harvest-selected').click();
   await page.getByRole('button', { name: 'Create my diamond', exact: true }).click();
@@ -101,6 +103,7 @@ try {
   await page.locator('.harvest-card').first().click();
   assert.equal(await page.locator('.action-history li').count(), 1);
   assert.match(await page.locator('.action-history').textContent(), /Small action 2/);
+  assert.equal(await page.locator('.action-history .paired-worry').textContent(), 'Worry 2');
   await page.getByRole('button', { name: 'Delete this diamond', exact: true }).click();
   await page.getByRole('button', { name: 'Yes, delete this diamond', exact: true }).click();
   await page.reload();
@@ -133,7 +136,7 @@ try {
   await m.getByRole('heading', { name: 'Every small step can bloom.' }).waitFor();
   await m.getByRole('link', { name: 'Back to your tree', exact: true }).click();
   await m.locator('#worry').fill('<img src=x onerror=alert(1)>');
-  await m.getByRole('button', { name: 'Make a leaf', exact: true }).click();
+  await m.getByRole('button', { name: 'Give it to the tree', exact: true }).click();
   assert.equal(await m.locator('.leaf-flight').count(), 0);
   await m.locator('.tree-heart').tap();
   assert.equal(await m.locator('.collection-text img').count(), 0);
@@ -161,7 +164,7 @@ try {
   assert.equal(await m.locator('.diamond-count').textContent(), '1');
   await m.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('Quota'); }; });
   await m.locator('#worry').fill('Must not lose my draft');
-  await m.getByRole('button', { name: 'Make a leaf', exact: true }).click();
+  await m.getByRole('button', { name: 'Give it to the tree', exact: true }).click();
   assert.equal(await m.locator('#worry').inputValue(), 'Must not lose my draft');
   assert.match(await m.locator('#toast').textContent(), /could not save/);
   const corrupt = await browser.newContext(); const c = await corrupt.newPage();

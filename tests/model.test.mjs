@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { blankGarden, addWorry, releaseWorry, chooseAction, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from '../public/model.js';
 
-test('worries become actions without retaining original worry text', () => {
+test('worries become actions with their original worry preserved', () => {
   const original = blankGarden();
   const a = addWorry(original, '  A private worry  ');
   assert.equal(a.leaves[0].text, 'A private worry');
@@ -10,8 +10,20 @@ test('worries become actions without retaining original worry text', () => {
   const b = chooseAction(a, a.leaves[0].id, 'Write one sentence');
   assert.equal(b.leaves.length, 0);
   assert.equal(b.flowers[0].action, 'Write one sentence');
-  assert.ok(!JSON.stringify(b).includes('A private worry'));
+  assert.equal(b.flowers[0].worry, 'A private worry');
   assert.throws(() => chooseAction(b, a.leaves[0].id, 'Again'));
+});
+test('legacy intentions remain readable and malformed worry text is rejected', () => {
+  let g = addWorry(blankGarden(), 'Original worry');
+  g = chooseAction(g, g.leaves[0].id, 'Small step');
+  g = harvestFlowers(g, [g.flowers[0].id]);
+  assert.equal(decodeGarden(JSON.stringify(g)).harvests[0].actions[0].worry, 'Original worry');
+  delete g.harvests[0].actions[0].worry;
+  assert.deepEqual(decodeGarden(JSON.stringify(g)), g);
+  for (const value of [null, '', 42, 'x'.repeat(1001)]) {
+    g.harvests[0].actions[0].worry = value;
+    assert.throws(() => decodeGarden(JSON.stringify(g)));
+  }
 });
 test('releasing removes only the selected worry', () => {
   const a = addWorry(addWorry(blankGarden(), 'Keep this'), 'Let this go');

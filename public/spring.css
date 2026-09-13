@@ -171,6 +171,12 @@ textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
 .harvest-card-heading p { font-size: 11px; margin: 8px 0 0; line-height: 1.5; }
 .intention-preview { display: flex; flex-direction: column; gap: 9px; margin: 20px 0; }
 .intention-preview>span { padding: 13px 15px; border-radius: 16px; background: #f4efe5; color: #62624e; line-height: 1.5; font-size: 13px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.intention-preview>span { display: block; -webkit-line-clamp: unset; }
+.intention-pair { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+.intention-pair .pair-label { display: block; font-family: var(--sans); font-size: 12px; font-weight: 600; color: #59663c; margin: 0 0 5px; }
+.intention-pair .pair-label:not(:first-child) { margin-top: 14px; }
+.intention-pair .paired-worry, .intention-pair .paired-action { display: block; line-height: 1.6; }
+.intention-pair .paired-worry { color: #72715d; }
 .harvest-card .card-link { padding-top: 18px; border-top: 1px solid #e4decb; font-size: 12px; }
 .treasure-footnote { color: #707354; }
 .treasure-empty { max-width: 650px; margin: 24px auto 0; padding: 26px 28px 32px; background: #fffdf6dc; border: 1px solid #e4dfcd; border-radius: 26px; box-shadow: 0 12px 40px #786b3210; }

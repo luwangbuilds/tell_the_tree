@@ -30,7 +30,7 @@ PORT=4183 /Users/luwang/.cache/codex-runtimes/codex-primary-runtime/dependencies
 
 ## Data
 
-Everything is stored in the current browser's `localStorage` under `tell-the-tree.v1`. No account, backend, tracking, remote fonts, or network API is used. Different browser profiles and origins have separate gardens; clearing browser data deletes the garden. Data is not encrypted. A released worry is removed; converting a worry into a flower preserves only the action. These are documented implementation defaults, not claims of previously confirmed product decisions.
+Everything is stored in the current browser's `localStorage` under `tell-the-tree.v1`. No account, backend, tracking, remote fonts, or network API is used. Different browser profiles and origins have separate gardens; clearing browser data deletes the garden. Data is not encrypted. A released worry is removed. Converting a worry into a flower now preserves its original text alongside the action, as requested; both remain paired through harvesting and appear in diamond cards and details. Older intentions without saved worry text remain readable and display an unavailable-text note.
 
 ## Tests
 
