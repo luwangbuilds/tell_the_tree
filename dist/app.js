@@ -121,7 +121,7 @@ function collectionPage() {
   const visible = entries.slice(start, start + branchSlots.length);
   return `<section class="collection-page bodhi-page"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><span class="eyebrow">ONE SMALL STEP, SOMETHING GROWS</span><h1>Your leaves &amp; flowers.</h1><p class="subtitle">Tap a glowing leaf to find a little clarity.</p></div>
     <div class="bodhi-legend"><span>${icon('leaf')} ${countText(garden.leaves.length, 'worry leaf', 'worry leaves')}</span><span>${icon('flower')} ${countText(garden.flowers.length, 'intention flower')}</span></div>
-    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-watercolor.webp" alt="A modern impressionist watercolor of a Bodhi tree with spreading branches" width="1448" height="1086" />
+    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-dappled-green.webp" alt="An impressionist Bodhi tree with a canopy of dappled green brushstrokes" width="1448" height="1086" />
       ${visible.map((item, index) => {
         const [x, y] = branchSlots[index];
         const isLeaf = item.kind === 'leaf';
