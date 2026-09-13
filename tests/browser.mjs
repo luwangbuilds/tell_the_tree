@@ -131,8 +131,9 @@ try {
   await page.waitForTimeout(1200);
   assert.equal(await page.locator('#breath-number').textContent(), number);
   await page.getByRole('button', { name: 'Resume breathing', exact: true }).click();
-  await page.getByRole('button', { name: 'Finish for now', exact: true }).click();
-  await page.getByRole('heading', { name: 'Leave a little lighter.' }).waitFor();
+  await page.getByRole('button', { name: 'Review your worries', exact: true }).click();
+  await page.locator('.collection-page').waitFor();
+  assert.equal(await page.getByRole('button', { name: /Worry leaves/ }).getAttribute('aria-pressed'), 'true');
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
   const m = await mobile.newPage();
   m.on('pageerror', e => errors.push(e.message));
