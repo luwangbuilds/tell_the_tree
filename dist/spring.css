@@ -45,9 +45,9 @@ textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
 .tree-bottom-note { margin-top: 36px; }
 .tree-bottom-note p { color: #74765b; }
 .scene-caption { bottom: -22px; color: #566138; font-size: 11px; }
-.tree-scene { --chest-x: 59%; --chest-y: 82.5%; --chest-width: clamp(86px,8vw,116px); }
+.tree-scene { --chest-x: 59%; --chest-y: 82.5%; --chest-width: clamp(112px,10.5vw,152px); }
 .chest { left: var(--chest-x); top: var(--chest-y); width: var(--chest-width); }
-.chest .diamond-count { color: #3f4427; background: #fffcf0ed; padding: 3px 8px; border-radius: 12px; min-width: 24px; width: max-content; margin: 1px auto 0; font-size: 11px; font-variant-numeric: tabular-nums; }
+.diamond-count { position: absolute; right: 11%; bottom: 18%; color: #fff2ab; font-size: 14px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 3px #ffe2a055; }
 .chest-illumination { position: absolute; left: var(--chest-x); top: var(--chest-y); width: var(--chest-width); aspect-ratio: 3/2; transform: translateX(-50%); pointer-events: none; z-index: 4; mix-blend-mode: screen; transition: translate .3s; }
 .chest-illumination:before { content: ''; position: absolute; left: 27%; right: 7%; top: 47%; height: 2%; transform: rotate(-3deg); border-radius: 50%; background: #fff9dd; box-shadow: 0 0 4px 2px #fff0bbaa, 0 0 12px 6px #edc26980; animation: chest-seam 4s ease-in-out infinite; }
 .chest-illumination i { position: absolute; left: 42%; bottom: 52%; width: 22%; height: 88%; transform-origin: 50% 100%; background: linear-gradient(0deg, #fff2bccc, #f6dfa857 40%, transparent 95%); filter: blur(3px); --ray-angle: -23deg; animation: chest-spill 4s ease-in-out infinite; }
@@ -55,7 +55,7 @@ textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
 .chest-illumination i:nth-child(3) { left: 67%; width: 20%; height: 78%; --ray-angle: 27deg; animation-delay: -1.4s; }
 .chest:hover + .chest-illumination { translate: 0 -3px; }
 .tree-heart { position: absolute; left: 43%; top: 72%; transform: translate(-50%, -50%); width: 52px; height: 52px; padding: 0; border-radius: 50%; display: grid; place-items: center; z-index: 4; }
-.tap-cue { display: block; width: 48px; height: 52px; overflow: visible; filter: drop-shadow(0 2px 3px #302b2080); transition: scale .2s; }
+.tap-cue { display: block; width: 34px; height: 38px; overflow: visible; filter: drop-shadow(0 2px 3px #302b2080); transition: scale .2s; }
 .tap-hand { transform-origin: 28px 12px; animation: hand-tap 3s ease-in-out infinite; }
 .tap-ripple { transform-origin: 28px 12px; opacity: .6; animation: tap-ripple 3s ease-out infinite; }
 .tree-heart:hover .tap-cue, .tree-heart:focus-visible .tap-cue { scale: 1.08; }
@@ -216,7 +216,8 @@ blockquote:before, blockquote:after { color: #9aa574; }
   .tree-heading .eyebrow, .tree-heading .subtitle, .tree-heading .gold-line { display: none; }
   .tree-scene { width: 100%; aspect-ratio: 4/5; margin: 0; border-radius: 0; }
   .tree-art-button:after { background: linear-gradient(0deg,var(--paper),transparent 13%); }
-  .tree-scene { --chest-width: 83px; --chest-x: 61%; --chest-y: 81%; }
+  .tree-scene { --chest-width: clamp(96px,29vw,116px); --chest-x: 61%; --chest-y: 80%; }
+  .diamond-count { font-size: 12px; }
   .chest span { font-size: 8px; }
   .scene-caption { display: none; }
   .tree-composer { position: relative; z-index: 4; width: calc(100% - 28px); max-width: none; margin: -13px 14px 0; padding: 21px 18px 18px; border-radius: 23px; background: #fffdf6f5; box-shadow: 0 8px 28px #62602212; }
