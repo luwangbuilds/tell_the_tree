@@ -17,6 +17,7 @@ try {
   await page.goto(base);
   await page.locator('#worry').waitFor();
   assert.equal(await page.locator('.opening').count(), 0);
+  assert.ok(await page.locator('.tree-heart').isHidden());
   assert.equal(await page.locator('.chest, .chest-illumination, .diamond-count').count(), 0);
   assert.ok(await page.getByRole('button', { name: 'Take a breathing break' }).isVisible());
   assert.equal(await page.locator('.tree-heart-light, .tree-heart-click').count(), 0);
@@ -37,6 +38,7 @@ try {
   assert.ok(await page.locator('.leaf-flight').count() > 0);
   assert.equal(await page.locator('.tree-marker').count(), 0);
   assert.equal(await page.locator('.tree-heart').count(), 1);
+  assert.ok(await page.locator('.tree-heart').isVisible());
   await page.screenshot({ path: 'test-results/tree-desktop.png', fullPage: true });
   await page.locator('.tree-heart').focus();
   await page.keyboard.press('Enter');
@@ -120,11 +122,12 @@ try {
   const m = await mobile.newPage();
   m.on('pageerror', e => errors.push(e.message));
   await m.goto(base);
-  await m.locator('.tree-heart').waitFor();
+  await m.locator('#worry').waitFor();
+  assert.ok(await m.locator('.tree-heart').isHidden());
   assert.equal(await m.locator('.opening').count(), 0);
   assert.equal(await m.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'none');
   assert.equal(await m.locator('.chest, .chest-illumination').count(), 0);
-  await m.locator('.tree-heart').tap();
+  await m.locator('.tree-summary [data-do="leaves"]').tap();
   await m.getByRole('heading', { name: 'A little room to breathe.' }).waitFor();
   await m.getByRole('button', { name: /Intention flowers/ }).click();
   await m.getByRole('heading', { name: 'Every small step can bloom.' }).waitFor();
@@ -150,6 +153,7 @@ try {
   assert.ok(await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await m.getByRole('link', { name: 'Back to your tree', exact: true }).click();
   await m.locator('.chest').waitFor();
+  assert.ok(await m.locator('.tree-heart').isHidden());
   assert.equal(await m.locator('.diamond-count').textContent(), '1');
   assert.equal(await m.locator('.chest').evaluate(el => getComputedStyle(el).mixBlendMode), 'normal');
   assert.equal(await m.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'none');
