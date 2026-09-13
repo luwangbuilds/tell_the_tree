@@ -44,14 +44,16 @@ try {
   await page.getByRole('button', { name: 'Reflect on worry: Worry 0', exact: true }).click();
   await page.getByRole('button', { name: /Not right now/ }).click();
   await page.getByRole('button', { name: 'Let it go', exact: true }).click();
+  assert.equal(await page.getByRole('button', { name: /Worry leaves/ }).getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('.worry-card').count(), 5);
   for (let i = 1; i < 6; i++) {
-    await leaves();
     await page.getByRole('button', { name: `Reflect on worry: Worry ${i}`, exact: true }).click();
     await page.getByRole('button', { name: /Yes, a small step/ }).click();
     await page.locator('#action-text').fill(`Small action ${i}`);
     await page.getByRole('button', { name: 'Let it bloom', exact: true }).click();
-    assert.equal(await page.locator('.flower-card').count(), i);
+    assert.equal(await page.getByRole('button', { name: /Worry leaves/ }).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.worry-card').count(), 5 - i);
+    assert.equal((await savedGarden()).flowers.length, i);
   }
   await page.getByRole('link', { name: 'Back to your tree', exact: true }).click();
   assert.equal(await page.locator('.tree-marker, .tree-harvest-below, [data-do="harvest"]').count(), 0);
@@ -134,6 +136,9 @@ try {
   await m.getByRole('button', { name: /Yes, a small step/ }).click();
   await m.locator('#action-text').fill('One mobile intention');
   await m.getByRole('button', { name: 'Let it bloom', exact: true }).click();
+  assert.equal(await m.getByRole('button', { name: /Worry leaves/ }).getAttribute('aria-pressed'), 'true');
+  await m.getByRole('heading', { name: 'A little room to breathe.' }).waitFor();
+  await m.getByRole('button', { name: /Intention flowers/ }).click();
   await m.getByRole('checkbox').check();
   await m.locator('#harvest-selected').tap();
   await m.getByRole('button', { name: 'Create my diamond', exact: true }).tap();

@@ -240,7 +240,7 @@ document.addEventListener('submit', event => {
     event.preventDefault(); const leafId = event.target.dataset.id;
     const text = new FormData(event.target).get('action');
     if (!transact(() => chooseAction(garden, leafId, text))) return;
-    openCollection('flowers'); toast('A little intention, a new bloom.');
+    openCollection('leaves'); toast('A little intention, a new bloom.');
   }
 });
 document.addEventListener('click', event => {
