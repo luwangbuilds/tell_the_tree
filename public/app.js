@@ -229,7 +229,7 @@ function animateNewLeaf() {
   const start = button.getBoundingClientRect();
   const scene = document.querySelector('.tree-scene');
   const sceneRect = scene.getBoundingClientRect();
-  const end = tree.hidden ? { left: sceneRect.left + sceneRect.width * .43, top: sceneRect.top + sceneRect.height * .72, width: 0, height: 0, bottom: sceneRect.top + sceneRect.height * .72 } : tree.getBoundingClientRect();
+  const end = tree.hidden ? { left: sceneRect.left + sceneRect.width * .37, top: sceneRect.top + sceneRect.height * .88, width: 0, height: 0, bottom: sceneRect.top + sceneRect.height * .88 } : tree.getBoundingClientRect();
   const x = start.left + start.width / 2 + scrollX;
   const y = start.top + start.height / 2 + scrollY;
   const dx = end.left + end.width / 2 + scrollX - x;

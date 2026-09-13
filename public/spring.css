@@ -60,7 +60,7 @@ textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
 .chest-illumination i:nth-child(2) { left: 55%; width: 17%; height: 105%; --ray-angle: 4deg; animation-delay: -.7s; }
 .chest-illumination i:nth-child(3) { left: 67%; width: 20%; height: 78%; --ray-angle: 27deg; animation-delay: -1.4s; }
 .chest:hover + .chest-illumination { translate: 0 -3px; }
-.tree-heart { position: absolute; left: 43%; top: 72%; transform: translate(-50%, -50%); width: 52px; height: 52px; padding: 0; border-radius: 50%; display: grid; place-items: center; z-index: 4; }
+.tree-heart { position: absolute; left: 37%; top: 88%; transform: translate(-50%, -50%); width: 52px; height: 52px; padding: 0; border-radius: 50%; display: grid; place-items: center; z-index: 4; }
 .tree-heart[hidden] { display: none; }
 .tap-cue { display: block; width: 34px; height: 38px; overflow: visible; filter: drop-shadow(0 2px 3px #302b2080); transition: scale .2s; }
 .tap-hand { transform-origin: 28px 12px; animation: hand-tap 3s ease-in-out infinite; }

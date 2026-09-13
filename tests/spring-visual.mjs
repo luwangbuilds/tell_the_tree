@@ -39,8 +39,8 @@ try {
         const point = await page.locator('.tree-heart').boundingBox();
         const scene = await page.locator('.tree-scene').boundingBox();
         assert.ok(point.width >= 44 && point.height >= 44);
-        assert.ok((point.x + point.width / 2 - scene.x) / scene.width > .4);
-        assert.ok((point.y + point.height / 2 - scene.y) / scene.height > .6);
+        assert.ok((point.x + point.width / 2 - scene.x) / scene.width > .3);
+        assert.ok((point.y + point.height / 2 - scene.y) / scene.height > .85);
       }
       if (route === 'treasure') {
         assert.equal(await page.locator('.harvest-card').count(), 1);
