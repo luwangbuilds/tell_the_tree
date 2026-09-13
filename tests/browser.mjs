@@ -17,10 +17,11 @@ try {
   await page.goto(base);
   await page.locator('#worry').waitFor();
   assert.equal(await page.locator('.opening').count(), 0);
-  assert.equal(await page.locator('.diamond-count').textContent(), '0');
+  assert.equal(await page.locator('.chest, .chest-illumination, .diamond-count').count(), 0);
+  assert.ok(await page.getByRole('button', { name: 'Take a breathing break' }).isVisible());
   assert.equal(await page.locator('.tree-heart-light, .tree-heart-click').count(), 0);
   assert.equal(await page.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'hand-tap');
-  assert.equal(await page.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'chest-spill');
+
   // Legacy opening links and unknown hashes also land on the tree.
   for (const hash of ['opening', 'unknown']) {
     await page.goto(base + '/#' + hash);
@@ -31,8 +32,9 @@ try {
   await page.goto(base);
   for (let i = 0; i < 6; i++) {
     await page.locator('#worry').fill(`Worry ${i}`);
-    await page.getByRole('button', { name: 'Add to the tree', exact: true }).click();
+    await page.getByRole('button', { name: 'Make a leaf', exact: true }).click();
   }
+  assert.ok(await page.locator('.leaf-flight').count() > 0);
   assert.equal(await page.locator('.tree-marker').count(), 0);
   assert.equal(await page.locator('.tree-heart').count(), 1);
   await page.screenshot({ path: 'test-results/tree-desktop.png', fullPage: true });
@@ -121,14 +123,15 @@ try {
   await m.locator('.tree-heart').waitFor();
   assert.equal(await m.locator('.opening').count(), 0);
   assert.equal(await m.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'none');
-  assert.equal(await m.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+  assert.equal(await m.locator('.chest, .chest-illumination').count(), 0);
   await m.locator('.tree-heart').tap();
   await m.getByRole('heading', { name: 'A little room to breathe.' }).waitFor();
   await m.getByRole('button', { name: /Intention flowers/ }).click();
   await m.getByRole('heading', { name: 'Every small step can bloom.' }).waitFor();
   await m.getByRole('link', { name: 'Back to your tree', exact: true }).click();
   await m.locator('#worry').fill('<img src=x onerror=alert(1)>');
-  await m.getByRole('button', { name: 'Add to the tree', exact: true }).click();
+  await m.getByRole('button', { name: 'Make a leaf', exact: true }).click();
+  assert.equal(await m.locator('.leaf-flight').count(), 0);
   await m.locator('.tree-heart').tap();
   assert.equal(await m.locator('.collection-text img').count(), 0);
   await m.locator('.worry-card').tap();
@@ -146,9 +149,15 @@ try {
   assert.equal(await m.evaluate(() => JSON.parse(localStorage.getItem('tell-the-tree.v1')).harvests[0].actions.length), 1);
   assert.ok(await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await m.getByRole('link', { name: 'Back to your tree', exact: true }).click();
+  await m.locator('.chest').waitFor();
+  assert.equal(await m.locator('.diamond-count').textContent(), '1');
+  assert.equal(await m.locator('.chest').evaluate(el => getComputedStyle(el).mixBlendMode), 'normal');
+  assert.equal(await m.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+  await m.reload();
+  assert.equal(await m.locator('.diamond-count').textContent(), '1');
   await m.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('Quota'); }; });
   await m.locator('#worry').fill('Must not lose my draft');
-  await m.getByRole('button', { name: 'Add to the tree', exact: true }).click();
+  await m.getByRole('button', { name: 'Make a leaf', exact: true }).click();
   assert.equal(await m.locator('#worry').inputValue(), 'Must not lose my draft');
   assert.match(await m.locator('#toast').textContent(), /could not save/);
   const corrupt = await browser.newContext(); const c = await corrupt.newPage();

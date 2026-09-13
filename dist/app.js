@@ -82,7 +82,7 @@ function header() {
 function footer() {
   return `<footer class="site-footer"><span>A little space. A gentler pace.</span><button class="text-button" data-do="privacy">${icon('lock')} Just for you, on this device</button></footer>`;
 }
-function cleanup() { clearInterval(breathInterval); }
+function cleanup() { clearInterval(breathInterval); document.querySelectorAll('.leaf-flight').forEach(el => el.remove()); }
 function navigate(next) { if (view === next) return; location.hash = next; }
 addEventListener('hashchange', () => {
   view = routes.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'tree';
@@ -98,8 +98,8 @@ function render() {
 
 function treePage() {
   return `<section class="tree-page page-enter"><div class="tree-heading"><span class="eyebrow">YOUR QUIET LITTLE CORNER</span><h1>A little space to let go.</h1><p class="subtitle">A little space for what is on your mind.</p><span class="gold-line"></span></div>
-    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /></div><button class="tree-heart" data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button><button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div></div>
-    <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">What is on your mind?</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea><button class="add-leaf" type="submit" aria-label="Add to the tree">${icon('plus')}</button></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div></form><button class="primary full" data-do="breathe">Finish worrying, continue to breathing ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
+    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /></div><button class="tree-heart" data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button>${garden.harvests.length ? `<button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div>` : ''}</div>
+    <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">What is on your mind?</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div><button class="add-leaf" type="submit">Make a leaf ${icon('check')}</button></form><button class="primary full" data-do="breathe">Take a breathing break ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
     </section>`;
 }
 function openCollection(tab = 'leaves') {
@@ -158,7 +158,7 @@ function togglePause() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && view === 'breathe' && !breathPaused) togglePause(); });
 
 function treasurePage() {
-  return `<section class="treasure-page page-enter"><span class="eyebrow">SMALL STEPS, HELD CLOSE</span><h1>Your small beginnings.</h1><p class="subtitle">Every intention is a seed of change.</p>${garden.harvests.length ? `<div class="treasure-hero-frame"><img class="treasure-hero" src="/assets/spring-treasure.webp" alt="" width="1536" height="1024" /></div><div class="treasure-count">${countText(garden.harvests.length, 'diamond')} <span>·</span> ${countText(garden.harvests.reduce((n, h) => n + h.actions.length, 0), 'intention')}</div><div class="diamond-grid">${garden.harvests.map((h, i) => `<button class="harvest-card" data-harvest="${h.id}"><div class="harvest-card-heading"><span class="memory-diamond">${diamondSVG()}</span><span><h2>${countText(h.actions.length, 'intention')}</h2><p>Saved ${date(h.createdAt)}</p></span></div><span class="intention-preview">${h.actions.slice(0, 3).map(a => `<span>${esc(a.action)}</span>`).join('')}</span><span class="card-link">View all intentions ${icon('arrow')}</span></button>`).join('')}</div>` : `<div class="treasure-empty"><div class="empty-chest">${chestIllustration()}</div><h2>Good things take their time.</h2><p>Choose one or more intention flowers to gather into a diamond.<br>Your little intentions will be waiting here, whenever you need them.</p><button class="primary" data-do="flowers">Visit your flowers ${icon('arrow')}</button></div>`}<p class="treasure-footnote">An intention is already a beginning. Nothing to tick off. Nothing to prove.</p></section>`;
+  return `<section class="treasure-page page-enter"><span class="eyebrow">SMALL STEPS, HELD CLOSE</span><h1>Your small beginnings.</h1><p class="subtitle">Every intention is a seed of change.</p>${garden.harvests.length ? `<div class="treasure-hero-frame"><img class="treasure-hero" src="/assets/spring-treasure.webp" alt="" width="1536" height="1024" /></div><div class="treasure-count">${countText(garden.harvests.length, 'diamond')} <span>·</span> ${countText(garden.harvests.reduce((n, h) => n + h.actions.length, 0), 'intention')}</div><div class="diamond-grid">${garden.harvests.map((h, i) => `<button class="harvest-card" data-harvest="${h.id}"><div class="harvest-card-heading"><span class="memory-diamond">${diamondSVG()}</span><span><h2>${countText(h.actions.length, 'intention')}</h2><p>Saved ${date(h.createdAt)}</p></span></div><span class="intention-preview">${h.actions.slice(0, 3).map(a => `<span>${esc(a.action)}</span>`).join('')}</span><span class="card-link">View all intentions ${icon('arrow')}</span></button>`).join('')}</div>` : `<div class="treasure-empty"><h2>Good things take their time.</h2><p>Choose one or more intention flowers to gather into a diamond.<br>Your little intentions will be waiting here, whenever you need them.</p><button class="primary" data-do="flowers">Visit your flowers ${icon('arrow')}</button></div>`}<p class="treasure-footnote">An intention is already a beginning. Nothing to tick off. Nothing to prove.</p></section>`;
 }
 function finishPage() {
   return `<section class="finish-page page-enter">${lotus}<span class="eyebrow">ENOUGH FOR THIS MOMENT</span><h1>Leave a little lighter.</h1><p class="subtitle">You made a little room for yourself.<br>Your tree will be here when you need it.</p><button class="primary" data-do="tree">Return to your tree ${icon('arrow')}</button><button class="text-button" data-do="treasure">Visit your diamonds</button></section>`;
@@ -212,6 +212,32 @@ function exportGarden() {
     toast('Your garden has been exported. Keep the file somewhere private.');
   } catch { toast('Your browser could not export your garden.'); }
 }
+function animateNewLeaf() {
+  if (reduceMotion.matches) return;
+  const button = document.querySelector('.add-leaf');
+  const tree = document.querySelector('.tree-heart');
+  if (!button || !tree) return;
+  const start = button.getBoundingClientRect();
+  const end = tree.getBoundingClientRect();
+  const x = start.left + start.width / 2 + scrollX;
+  const y = start.top + start.height / 2 + scrollY;
+  const dx = end.left + end.width / 2 + scrollX - x;
+  const dy = end.top + end.height / 2 + scrollY - y;
+  const leaf = document.createElement('div');
+  leaf.className = 'leaf-flight'; leaf.innerHTML = leafSVG();
+  leaf.style.left = `${x}px`; leaf.style.top = `${y}px`;
+  document.querySelector('#effects').append(leaf);
+  const pose = (x, y, scale, rotation) => `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(${rotation}deg) scale(${scale})`;
+  const animation = leaf.animate([
+    { transform: pose(0, 0, .1, -25), opacity: 0, offset: 0 },
+    { transform: pose(0, -28, 1.2, 5), opacity: 1, offset: .22 },
+    { transform: pose(dx * .5, dy * .5 - 65, 1, -20), opacity: 1, offset: .58 },
+    { transform: pose(dx, dy, .6, 15), opacity: 1, offset: .88 },
+    { transform: pose(dx, dy, .15, 15), opacity: 0, offset: 1 },
+  ], { duration: 1700, easing: 'ease-in-out', fill: 'forwards' });
+  if (end.top < 80 || end.bottom > innerHeight - 100) tree.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  animation.finished.then(() => leaf.remove(), () => leaf.remove());
+}
 function effect(type, sourceRect) {
   if (reduceMotion.matches) return;
   const el = document.createElement('div'); el.className = `transformation ${type}`;
@@ -234,7 +260,13 @@ document.addEventListener('submit', event => {
   if (event.target.id === 'worry-form') {
     event.preventDefault();
     if (!transact(() => addWorry(garden, draft))) return;
-    draft = ''; render(); toast('Your worry has a place to rest.'); document.querySelector('#worry')?.focus();
+    draft = '';
+    document.querySelector('#worry').value = '';
+    document.querySelector('#word-count').textContent = '0 / 1000';
+    document.querySelector('.tree-summary [data-do="leaves"]').innerHTML = icon('leaf') + ' ' + countText(garden.leaves.length, 'worry', 'worries');
+    document.querySelector('.add-leaf').focus({ preventScroll: true });
+    animateNewLeaf();
+    toast('Your worry has a place to rest.');
   }
   if (event.target.id === 'action-form') {
     event.preventDefault(); const leafId = event.target.dataset.id;

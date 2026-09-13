@@ -38,7 +38,11 @@ body:before { opacity: .012; }
 .worry-input textarea { background: #fffefb; border-color: #ddd9c6; box-shadow: none; color: #394329; }
 .worry-input textarea::placeholder { color: #898672; }
 textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
-.add-leaf { background: #b99b5c; color: #fffdf3; border-color: #b99b5c; }
+.tree-composer .add-leaf { position: static; display: flex; align-items: center; justify-content: center; gap: 9px; width: fit-content; min-height: 44px; height: auto; margin: -7px 0 18px auto; padding: 10px 18px; border-radius: 24px; background: #b99b5c; color: #fffdf3; border-color: #b99b5c; font-size: 14px; }
+.tree-composer .worry-input textarea { padding-right: 16px; }
+.add-leaf .icon { width: 18px; height: 18px; }
+.leaf-flight { position: absolute; width: 66px; height: 66px; z-index: 60; pointer-events: none; filter: drop-shadow(0 0 8px #fff2ad); }
+.leaf-flight svg { display: block; width: 100%; height: 100%; }
 .add-leaf:hover { background: #a88a4b; }
 .input-note, .summary-item span { color: #787863; }
 .tree-summary { margin-top: 24px; padding-top: 18px; align-items: center; }
@@ -46,7 +50,9 @@ textarea { color: #394329; border-color: #d8d9c3; background: #fffdf7; }
 .tree-bottom-note p { color: #74765b; }
 .scene-caption { bottom: -22px; color: #566138; font-size: 11px; }
 .tree-scene { --chest-x: 59%; --chest-y: 82.5%; --chest-width: clamp(112px,10.5vw,152px); }
-.chest { left: var(--chest-x); top: var(--chest-y); width: var(--chest-width); }
+.chest { left: var(--chest-x); top: var(--chest-y); width: var(--chest-width); mix-blend-mode: normal; opacity: 1; }
+/* Clip the white backdrop; keep the painted wood and metal fully opaque. */
+.chest-image { clip-path: polygon(6.9% 35.8%, 7.8% 29%, 9.7% 23.5%, 12.5% 19%, 16% 16.8%, 21% 16%, 24.5% 16.7%, 76.5% 14.5%, 77% 14.1%, 82% 14%, 85% 15%, 88% 18%, 90% 23%, 91.8% 29%, 93.2% 37.5%, 93.5% 44.5%, 93% 46%, 93.4% 78.8%, 93% 81%, 89% 82%, 87.6% 81.8%, 86.7% 79.3%, 33% 85.3%, 32.7% 88%, 27.3% 88.7%, 23% 86.5%, 22.8% 83%, 13% 77.5%, 12.5% 79.3%, 11% 79.5%, 7.2% 77.5%, 6.8% 76%, 6.8% 73%, 7% 72.5%, 6.8% 43%, 7% 42%, 6.8% 41%); }
 .diamond-count { position: absolute; right: 11%; bottom: 18%; color: #fff2ab; font-size: 14px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 3px #ffe2a055; }
 .chest-illumination { position: absolute; left: var(--chest-x); top: var(--chest-y); width: var(--chest-width); aspect-ratio: 3/2; transform: translateX(-50%); pointer-events: none; z-index: 4; mix-blend-mode: screen; transition: translate .3s; }
 .chest-illumination:before { content: ''; position: absolute; left: 27%; right: 7%; top: 47%; height: 2%; transform: rotate(-3deg); border-radius: 50%; background: #fff9dd; box-shadow: 0 0 4px 2px #fff0bbaa, 0 0 12px 6px #edc26980; animation: chest-seam 4s ease-in-out infinite; }
