@@ -17,6 +17,10 @@ try {
   await page.goto(base);
   await page.locator('#worry').waitFor();
   assert.equal(await page.locator('.opening').count(), 0);
+  assert.equal(await page.locator('.diamond-count').textContent(), '0');
+  assert.equal(await page.locator('.tree-heart-light, .tree-heart-click').count(), 0);
+  assert.equal(await page.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'hand-tap');
+  assert.equal(await page.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'chest-spill');
   // Legacy opening links and unknown hashes also land on the tree.
   for (const hash of ['opening', 'unknown']) {
     await page.goto(base + '/#' + hash);
@@ -114,7 +118,8 @@ try {
   await m.goto(base);
   await m.locator('.tree-heart').waitFor();
   assert.equal(await m.locator('.opening').count(), 0);
-  assert.equal(await m.locator('.tree-heart').evaluate(el => getComputedStyle(el, '::before').animationName), 'none');
+  assert.equal(await m.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'none');
+  assert.equal(await m.locator('.chest-illumination i').first().evaluate(el => getComputedStyle(el).animationName), 'none');
   await m.locator('.tree-heart').tap();
   await m.getByRole('heading', { name: 'A little room to breathe.' }).waitFor();
   await m.getByRole('button', { name: /Intention flowers/ }).click();

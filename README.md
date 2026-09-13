@@ -22,7 +22,7 @@ PORT=4183 /Users/luwang/.cache/codex-runtimes/codex-primary-runtime/dependencies
 ## Implemented experience
 
 - Direct entry to the tree, including for reduced-motion users. The previous 烦恼即菩提 opening screen has been removed; old opening links fall back to the tree.
-- Add worries to a sunlit spring tree. One glowing point on the main trunk opens the leaves-and-flowers collection at `#garden`. The photographic foliage and blossoms are decorative; saved worries and intentions appear as cards in the collection, not on the tree.
+- Add worries to a sunlit spring tree. An animated pointing-hand cue on the main trunk opens the leaves-and-flowers collection at `#garden`. The photographic foliage and blossoms are decorative; saved worries and intentions appear as cards in the collection, not on the tree. The treasure chest shows only the diamond count, with golden light spilling from its lid. Motion becomes static when reduced motion is enabled.
 - Repeating 4-7-8 guided breathing, pause/resume, return to tree, and finish. Moving the tab into the background pauses breathing automatically; resume manually.
 - Choose a small action to turn a worry into a flower, or explicitly release it. No completion checklists.
 - Select any one or more intention flowers to harvest into one diamond. Only selected flowers are gathered; others remain. There is no five-flower threshold or tree-page harvest invitation. Treasure history retains each action and its date, including previously saved diamonds. Each diamond can be permanently deleted after confirmation.
