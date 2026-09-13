@@ -49,17 +49,16 @@ try {
         await page.keyboard.press('Escape');
       }
       if (route === 'garden') {
-        await page.getByRole('button', { name: /Worry leaves/ }).click();
-        assert.equal(await page.locator('.worry-card').count(), 3);
-        await page.locator('#main').focus();
-        await page.evaluate(() => scrollTo(0, 0));
-        await page.screenshot({ path: `test-results/collection-leaves-${width}.png`, fullPage: true });
-        await page.getByRole('button', { name: /Intention flowers/ }).click();
-        await page.getByRole('button', { name: 'Clear selection', exact: true }).click();
-        await page.getByRole('checkbox').first().check();
-        await page.getByRole('checkbox').last().check();
-        assert.equal(await page.getByRole('checkbox', { checked: true }).count(), 2);
-        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `flowers overflow at ${width}`);
+        assert.equal(await page.locator('.worry-node').count(), 3);
+        assert.equal(await page.locator('.flower-node').count(), 3);
+        assert.equal(await page.getByRole('checkbox').count(), 0);
+        await page.locator('.flower-node').first().click();
+        assert.equal(await page.locator('.flower-detail .paired-worry').textContent(), 'A private worry');
+        await page.keyboard.press('Escape');
+        for (const node of await page.locator('.bodhi-node').all()) {
+          const box = await node.boundingBox();
+          assert.ok(box.width >= 44 && box.height >= 44);
+        }
       }
       await page.locator('#main').focus();
       await page.evaluate(() => scrollTo(0, 0));
@@ -67,5 +66,5 @@ try {
       await page.screenshot({ path: `test-results/spring-${route}-${width}.png`, fullPage: true });
     }
   }
-  console.log('PASS: glow entrance, leaf and selected-flower collections, chest navigation, saved intentions and all five routes at 320/390/768/1440px without horizontal overflow.');
+  console.log('PASS: glow entrance, graphical leaf and flower tree, chest navigation, saved intentions and all five routes at 320/390/768/1440px without horizontal overflow.');
 } finally { await browser.close(); }

@@ -52,8 +52,8 @@ try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) garden = decodeGar
 catch (error) { loadError = error.message || 'Your browser could not open saved data.'; }
 const routes = ['tree', 'garden', 'breathe', 'treasure', 'finish'];
 let view = routes.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'tree';
-let gardenTab = 'leaves';
-const selectedFlowers = new Set();
+let branchPage = 0;
+const branchSlots = [[34, 12], [58, 10], [80, 22], [15, 28], [37, 35], [65, 33], [18, 57], [82, 59]];
 let draft = '';
 let breathInterval;
 let breathElapsed = 0;
@@ -91,7 +91,6 @@ addEventListener('hashchange', () => {
 });
 function render() {
   cleanup();
-  for (const flowerId of selectedFlowers) if (!garden.flowers.some(f => f.id === flowerId)) selectedFlowers.delete(flowerId);
   document.body.dataset.view = view;
   app.innerHTML = header() + (loadError ? `<div class="storage-banner" role="alert">Your saved garden needs attention. Nothing has been overwritten. <button data-do="privacy">Review saved data</button></div>` : '') + `<main id="main" tabindex="-1">${view === 'tree' ? treePage() : view === 'garden' ? collectionPage() : view === 'breathe' ? breathingPage() : view === 'treasure' ? treasurePage() : finishPage()}</main>` + footer();
   if (view === 'breathe') startBreathing();
@@ -103,30 +102,60 @@ function treePage() {
     <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">Tell a worry to the tree</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div><button class="add-leaf" type="submit">Give it to the tree ${icon('check')}</button></form><button class="primary full" data-do="breathe">Take a breathing break ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
     </section>`;
 }
-function openCollection(tab = 'leaves') {
-  gardenTab = tab;
+function treeEntries() {
+  return [...garden.leaves.map(item => ({ ...item, kind: 'leaf' })), ...garden.flowers.map(item => ({ ...item, kind: 'flower' }))].sort((a, b) => a.id.localeCompare(b.id));
+}
+function openCollection(kind) {
+  const index = treeEntries().findIndex(item => item.kind === (kind === 'flowers' ? 'flower' : 'leaf'));
+  if (kind && index >= 0) branchPage = Math.floor(index / branchSlots.length);
   closeDialog();
   if (view !== 'garden') { navigate('garden'); return; }
   render();
-  document.querySelector('.collection-switch [aria-pressed="true"]')?.focus({ preventScroll: true });
+  document.querySelector('.bodhi-node, #harvest-all, .collection-back')?.focus({ preventScroll: true });
 }
 function collectionPage() {
-  const flowers = gardenTab === 'flowers';
-  return `<section class="collection-page page-enter"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><span class="eyebrow">HELD GENTLY, GROWING QUIETLY</span><h1>Your leaves &amp; flowers.</h1><p class="subtitle">A place for what you carry, and what comes next.</p></div><div class="collection-switch" role="group" aria-label="Choose leaves or flowers"><button data-do="leaves" aria-pressed="${!flowers}">${icon('leaf')} Worry leaves <span>${garden.leaves.length}</span></button><button data-do="flowers" aria-pressed="${flowers}">${icon('flower')} Intention flowers <span>${garden.flowers.length}</span></button></div>
-    <div class="collection-intro"><h2>${flowers ? 'Little intentions, in bloom.' : 'One leaf at a time.'}</h2><p>${flowers ? 'Choose any flowers to gather into one diamond. The others can keep blooming.' : 'Choose a leaf to reflect, take a small step, or let it go.'}</p></div>
-    ${flowers ? flowersCollection() : garden.leaves.length ? `<div class="collection-grid">${garden.leaves.map(l => `<button class="collection-card worry-card" data-leaf="${l.id}" aria-label="Reflect on worry: ${esc(l.text)}"><span class="collection-art">${leafSVG()}</span><span class="collection-text">${esc(l.text)}</span><small>Held since ${date(l.createdAt)}</small><span class="collection-card-link">Find a little clarity ${icon('arrow')}</span></button>`).join('')}</div>` : `<div class="collection-empty"><span class="collection-art">${leafSVG()}</span><h2>A little room to breathe.</h2><p>No worry leaves here right now. Your tree is ready whenever you need it.</p><a class="primary" href="#tree">Return to your tree ${icon('arrow')}</a></div>`}
+  const entries = treeEntries();
+  const pages = Math.max(1, Math.ceil(entries.length / branchSlots.length));
+  branchPage = Math.min(Math.max(0, branchPage), pages - 1);
+  const start = branchPage * branchSlots.length;
+  const visible = entries.slice(start, start + branchSlots.length);
+  return `<section class="collection-page bodhi-page"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><span class="eyebrow">ONE SMALL STEP, SOMETHING GROWS</span><h1>Your leaves &amp; flowers.</h1><p class="subtitle">Tap a glowing leaf to find a little clarity.</p></div>
+    <div class="bodhi-legend"><span>${icon('leaf')} ${countText(garden.leaves.length, 'worry leaf', 'worry leaves')}</span><span>${icon('flower')} ${countText(garden.flowers.length, 'intention flower')}</span></div>
+    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-collection.webp" alt="A storybook Bodhi tree with spreading branches and heart-shaped leaves" width="1448" height="1086" />
+      ${visible.map((item, index) => {
+        const [x, y] = branchSlots[index];
+        const isLeaf = item.kind === 'leaf';
+        const label = isLeaf ? item.text : item.action;
+        return `<button class="bodhi-node ${isLeaf ? 'worry-node' : 'flower-node'} ${x > 70 ? 'node-right' : x < 25 ? 'node-left' : ''}" style="--node-x:${x}%;--node-y:${y}%;--node-delay:${index * -.4}s" data-${isLeaf ? 'leaf' : 'flower'}="${item.id}" aria-label="${isLeaf ? 'Reflect on worry' : 'View intention'}: ${esc(label)}"><span class="bodhi-symbol" aria-hidden="true">${isLeaf ? leafSVG() : flowerSVG()}</span><span class="node-label" aria-hidden="true">${esc(label.length > 90 ? label.slice(0, 90) + '…' : label)}</span></button>`;
+      }).join('')}
+    </div>
+    ${pages > 1 ? `<div class="branch-navigation" aria-label="Browse tree branches"><button class="text-button" data-do="previous-branches" ${branchPage === 0 ? 'disabled' : ''}>${icon('back')} Previous</button><span role="status">${start + 1}–${start + visible.length} of ${entries.length}</span><button class="text-button" data-do="next-branches" ${branchPage === pages - 1 ? 'disabled' : ''}>More branches ${icon('arrow')}</button></div>` : ''}
+    ${!entries.length ? `<div class="bodhi-empty"><h2>A little room to breathe.</h2><p>Give a worry to the tree to grow your first leaf.</p><a class="text-button" href="#tree">Tell the tree a worry ${icon('arrow')}</a></div>` : '<p class="bodhi-hint">Glowing leaves hold worries. Flowers hold your small steps.</p>'}
+    <div class="bodhi-harvest"><div><button class="primary" id="harvest-all" data-do="harvest-all" ${garden.flowers.length ? '' : 'disabled'}>Harvest all flowers${garden.flowers.length ? ` (${garden.flowers.length})` : ''} ${icon('arrow')}</button><p>${garden.flowers.length ? `All ${countText(garden.flowers.length, 'flower')} become one diamond.` : 'A flower grows when you choose a small step.'}</p></div><a class="text-button" href="#treasure">View your diamonds ${icon('box')}</a></div>
   </section>`;
 }
-function flowersCollection() {
-  if (!garden.flowers.length) return `<div class="collection-empty"><span class="collection-art">${flowerSVG()}</span><h2>Every small step can bloom.</h2><p>A flower grows when you choose an action for a worry leaf.</p><button class="primary" data-do="leaves">Visit your leaves ${icon('arrow')}</button><a class="text-button" href="#treasure">Visit your diamonds ${icon('box')}</a></div>`;
-  return `<div class="collection-selection"><span id="selection-count" role="status">${countText(selectedFlowers.size, 'flower')} selected</span><div><button class="text-button" data-do="select-all-flowers">Select all</button><button class="text-button" data-do="clear-flowers">Clear selection</button></div></div><div class="collection-grid">${garden.flowers.map(f => `<label class="collection-card flower-card"><input type="checkbox" name="harvest-flower" value="${f.id}" ${selectedFlowers.has(f.id) ? 'checked' : ''} aria-label="Select intention: ${esc(f.action)}" /><span class="collection-art">${flowerSVG()}</span><span class="collection-text">${intentionPair(f)}</span><small>Chosen ${date(f.createdAt)}</small><span class="collection-card-link">Select to harvest ${icon('check')}</span></label>`).join('')}</div><div class="collection-harvest"><div><strong>A little light to keep.</strong><p>Gather your selected intentions into one diamond.</p></div><button class="primary" id="harvest-selected" data-do="harvest" ${selectedFlowers.size ? '' : 'disabled'}>Harvest selected flowers ${icon('arrow')}</button></div>`;
+function bloomOnTree(leafId) {
+  const node = document.querySelector(`.flower-node[data-flower="${leafId}"]`);
+  if (!node) return;
+  node.focus({ preventScroll: true });
+  if (reduceMotion.matches) return;
+  node.classList.add('blooming');
+  const oldLeaf = document.createElement('span');
+  oldLeaf.className = 'blooming-leaf'; oldLeaf.setAttribute('aria-hidden', 'true'); oldLeaf.innerHTML = leafSVG();
+  node.append(oldLeaf);
+  setTimeout(() => { oldLeaf.remove(); node.classList.remove('blooming'); }, 1800);
 }
-function updateFlowerSelection() {
-  document.querySelectorAll('input[name="harvest-flower"]').forEach(input => { input.checked = selectedFlowers.has(input.value); });
-  const count = document.querySelector('#selection-count');
-  if (count) count.textContent = `${countText(selectedFlowers.size, 'flower')} selected`;
-  const harvest = document.querySelector('#harvest-selected');
-  if (harvest) harvest.disabled = selectedFlowers.size === 0;
+function showFlower(flowerId) {
+  const flower = garden.flowers.find(item => item.id === flowerId);
+  if (!flower) return;
+  showDialog(`<div class="single-flower">${flowerSVG()}</div><span class="eyebrow">A SMALL STEP, IN BLOOM</span><h2 id="dialog-title">Your intention.</h2><div class="flower-detail">${intentionPair(flower)}</div><button class="primary full" data-do="close">Back to your tree</button>`);
+}
+function harvestAllFlowers() {
+  if (!garden.flowers.length) return;
+  if (!transact(() => harvestFlowers(garden, garden.flowers.map(flower => flower.id)))) return;
+  closeDialog(); render(); effect('harvest-effect');
+  document.querySelector('.bodhi-harvest a')?.focus({ preventScroll: true });
+  toast('Your flowers became one diamond. Your worries and intentions are kept together.');
 }
 function breathingPage() {
   return `<section class="breathing-page page-enter"><div class="breathing-heading"><span class="eyebrow">A SOFTER RHYTHM</span><h1>Come back to your breath.</h1></div><div class="breath-orbit" id="breath-orbit"><div class="watercolor-rings"><i></i><i></i><i></i>${lotus}</div><div class="breath-copy"><p id="phase-label" aria-live="polite">Breathe in</p><span id="breath-number" aria-hidden="true">4</span><span id="breath-status">Slowly, through your nose</span></div></div><div class="breath-sequence"><span data-phase="inhale">Inhale <b>4</b></span><i>·</i><span data-phase="hold">Hold <b>7</b></span><i>·</i><span data-phase="exhale">Exhale <b>8</b></span></div><button class="pause-button" data-do="pause" aria-label="Pause breathing">${icon('pause')}</button><div class="breathing-actions"><button class="primary" data-do="tree">Return to the tree ${icon('arrow')}</button><button class="text-button" data-do="leaves">Review your worries</button></div></section>`;
@@ -167,7 +196,7 @@ function intentionPair(intention) {
   return `<span class="intention-pair"><small class="pair-label">Worry</small><span class="paired-worry">${intention.worry ? esc(intention.worry) : 'Original worry wasn’t saved for this older intention.'}</span><small class="pair-label">Intention</small><span class="paired-action">${esc(intention.action)}</span></span>`;
 }
 function treasurePage() {
-  return `<section class="treasure-page page-enter"><span class="eyebrow">SMALL STEPS, HELD CLOSE</span><h1>Your small beginnings.</h1><p class="subtitle">Every intention is a seed of change.</p>${garden.harvests.length ? `<div class="treasure-hero-frame"><img class="treasure-hero" src="/assets/spring-treasure.webp" alt="" width="1536" height="1024" /></div><div class="treasure-count">${countText(garden.harvests.length, 'diamond')} <span>·</span> ${countText(garden.harvests.reduce((n, h) => n + h.actions.length, 0), 'intention')}</div><div class="diamond-grid">${garden.harvests.map((h, i) => `<button class="harvest-card" data-harvest="${h.id}"><div class="harvest-card-heading"><span class="memory-diamond">${diamondSVG()}</span><span><h2>${countText(h.actions.length, 'intention')}</h2><p>Saved ${date(h.createdAt)}</p></span></div><span class="intention-preview">${h.actions.slice(0, 3).map(a => `<span>${intentionPair(a)}</span>`).join('')}</span><span class="card-link">View all intentions ${icon('arrow')}</span></button>`).join('')}</div>` : `<div class="treasure-empty"><h2>Good things take their time.</h2><p>Choose one or more intention flowers to gather into a diamond.<br>Your little intentions will be waiting here, whenever you need them.</p><button class="primary" data-do="flowers">Visit your flowers ${icon('arrow')}</button></div>`}<p class="treasure-footnote">An intention is already a beginning. Nothing to tick off. Nothing to prove.</p></section>`;
+  return `<section class="treasure-page page-enter"><span class="eyebrow">SMALL STEPS, HELD CLOSE</span><h1>Your small beginnings.</h1><p class="subtitle">Every intention is a seed of change.</p>${garden.harvests.length ? `<div class="treasure-hero-frame"><img class="treasure-hero" src="/assets/spring-treasure.webp" alt="" width="1536" height="1024" /></div><div class="treasure-count">${countText(garden.harvests.length, 'diamond')} <span>·</span> ${countText(garden.harvests.reduce((n, h) => n + h.actions.length, 0), 'intention')}</div><div class="diamond-grid">${garden.harvests.map((h, i) => `<button class="harvest-card" data-harvest="${h.id}"><div class="harvest-card-heading"><span class="memory-diamond">${diamondSVG()}</span><span><h2>${countText(h.actions.length, 'intention')}</h2><p>Saved ${date(h.createdAt)}</p></span></div><span class="intention-preview">${h.actions.slice(0, 3).map(a => `<span>${intentionPair(a)}</span>`).join('')}</span><span class="card-link">View all intentions ${icon('arrow')}</span></button>`).join('')}</div>` : `<div class="treasure-empty"><h2>Good things take their time.</h2><p>Grow a flower by choosing a small step for a worry.<br>Harvest your flowers together to make a diamond.</p><button class="primary" data-do="flowers">Visit your flowers ${icon('arrow')}</button></div>`}<p class="treasure-footnote">An intention is already a beginning. Nothing to tick off. Nothing to prove.</p></section>`;
 }
 function finishPage() {
   return `<section class="finish-page page-enter">${lotus}<span class="eyebrow">ENOUGH FOR THIS MOMENT</span><h1>Leave a little lighter.</h1><p class="subtitle">You made a little room for yourself.<br>Your tree will be here when you need it.</p><button class="primary" data-do="tree">Return to your tree ${icon('arrow')}</button><button class="text-button" data-do="treasure">Visit your diamonds</button></section>`;
@@ -197,11 +226,6 @@ function releasePrompt(leafId) {
   showDialog(`<div class="dialog-symbol">${icon('wind')}</div><span class="eyebrow">YOU CAN SET THIS DOWN</span><h2 id="dialog-title">Let the earth hold it.</h2><blockquote>${esc(leaf.text)}</blockquote><p class="dialog-description">You don't have to carry what you cannot change right now.</p><button class="primary full" data-release="${leafId}">Let it go ${icon('leaf')}</button><p class="field-hint">This worry will leave your tree and your saved records.</p><button class="text-button later" data-leaf="${leafId}">Keep it for now</button>`);
 }
 function showFlowers() { openCollection('flowers'); }
-function harvestPrompt() {
-  const flowers = garden.flowers.filter(f => selectedFlowers.has(f.id));
-  if (!flowers.length) { toast('Choose at least one flower to harvest.'); return; }
-  showDialog(`<div class="dialog-symbol">${icon('flower')}</div><span class="eyebrow">GATHER A LITTLE GOODNESS</span><h2 id="dialog-title">A diamond from your intentions.</h2><p class="dialog-description">Your ${countText(flowers.length, 'selected flower')} will become one diamond. Unselected flowers will keep blooming.</p><div class="harvest-preview">${flowerSVG()}<span>→</span>${diamondSVG()}</div><ul class="harvest-selection-preview">${flowers.map(f => `<li>${esc(f.action)}</li>`).join('')}</ul><button class="primary full" data-do="confirm-harvest">Create my diamond ${icon('check')}</button><button class="text-button later" data-do="close">Keep choosing</button>`);
-}
 function showHarvest(harvestId) {
   const harvest = garden.harvests.find(h => h.id === harvestId); if (!harvest) return;
   showDialog(`<div class="small-diamond">${diamondSVG()}</div><span class="eyebrow">${date(harvest.createdAt)}</span><h2 id="dialog-title">Small steps. Lasting light.</h2><p class="dialog-description">${countText(harvest.actions.length, 'intention')} from this harvest.</p><ol class="action-history">${harvest.actions.map(a => `<li>${intentionPair(a)}<small>${date(a.createdAt)}</small></li>`).join('')}</ol><button class="primary full" data-do="close">Keep it close</button><button class="text-button danger later" data-delete-harvest="${harvest.id}">Delete this diamond</button>`);
@@ -261,12 +285,6 @@ function effect(type, sourceRect) {
 document.addEventListener('input', event => {
   if (event.target.id === 'worry') { draft = event.target.value; document.querySelector('#word-count').textContent = `${draft.length} / 1000`; }
 });
-document.addEventListener('change', event => {
-  if (event.target.name !== 'harvest-flower') return;
-  if (event.target.checked) selectedFlowers.add(event.target.value);
-  else selectedFlowers.delete(event.target.value);
-  updateFlowerSelection();
-});
 document.addEventListener('submit', event => {
   if (event.target.id === 'worry-form') {
     event.preventDefault();
@@ -284,12 +302,13 @@ document.addEventListener('submit', event => {
     event.preventDefault(); const leafId = event.target.dataset.id;
     const text = new FormData(event.target).get('action');
     if (!transact(() => chooseAction(garden, leafId, text))) return;
-    openCollection('leaves'); effect('bloom-effect'); toast('A little intention, a new bloom.');
+    closeDialog(); render(); bloomOnTree(leafId); toast('A little intention, a new bloom.');
   }
 });
 document.addEventListener('click', event => {
   const el = event.target.closest('button'); if (!el) return;
   if (el.dataset.leaf) return reflect(el.dataset.leaf);
+  if (el.dataset.flower) return showFlower(el.dataset.flower);
   if (el.dataset.harvest) return showHarvest(el.dataset.harvest);
   if (el.dataset.deleteHarvest) return deleteHarvestPrompt(el.dataset.deleteHarvest);
   if (el.dataset.confirmDeleteHarvest) {
@@ -299,19 +318,15 @@ document.addEventListener('click', event => {
   if (el.dataset.actionFor) return actionForm(el.dataset.actionFor);
   if (el.dataset.releaseFor) return releasePrompt(el.dataset.releaseFor);
   if (el.dataset.release) {
-    const rect = document.querySelector(`.worry-card[data-leaf="${el.dataset.release}"]`)?.getBoundingClientRect();
+    const rect = document.querySelector(`.worry-node[data-leaf="${el.dataset.release}"]`)?.getBoundingClientRect();
     if (!transact(() => releaseWorry(garden, el.dataset.release))) return;
-    openCollection('leaves'); effect('release-effect', rect); toast('Gently let go. There is room to breathe.'); return;
+    closeDialog(); render(); document.querySelector('.bodhi-node, .collection-back')?.focus({ preventScroll: true }); effect('release-effect', rect); toast('Gently let go. There is room to breathe.'); return;
   }
   const actions = {
     tree: () => navigate('tree'), breathe: () => navigate('breathe'), treasure: () => navigate('treasure'), finish: () => navigate('finish'), pause: togglePause,
-    close: closeDialog, garden: () => openCollection(), leaves: showLeaves, flowers: showFlowers, harvest: harvestPrompt, privacy, export: exportGarden,
-    'select-all-flowers': () => { garden.flowers.forEach(f => selectedFlowers.add(f.id)); updateFlowerSelection(); },
-    'clear-flowers': () => { selectedFlowers.clear(); updateFlowerSelection(); },
-    'confirm-harvest': () => {
-      if (!transact(() => harvestFlowers(garden, [...selectedFlowers]))) return;
-      selectedFlowers.clear(); openCollection('flowers'); effect('harvest-effect'); toast('A diamond for your treasure. Your selected intentions are kept.');
-    },
+    close: closeDialog, garden: () => openCollection(), leaves: showLeaves, flowers: showFlowers, 'harvest-all': harvestAllFlowers, privacy, export: exportGarden,
+    'previous-branches': () => { branchPage--; openCollection(); },
+    'next-branches': () => { branchPage++; openCollection(); },
     'reset-prompt': () => showDialog(`<div class="dialog-symbol">${icon('leaf')}</div><h2 id="dialog-title">Begin with a clear garden?</h2><p class="dialog-description">This permanently removes all worries, flowers, and diamonds saved in this browser. You can export a copy first.</p><button class="secondary full" data-do="export">Export a copy</button><button class="primary full danger-fill" data-do="confirm-reset">Yes, clear my garden</button><button class="text-button later" data-do="close">Keep my garden</button>`),
     'confirm-reset': () => {
       try { localStorage.removeItem(STORAGE_KEY); garden = blankGarden(); loadError = ''; draft = ''; closeDialog(); render(); toast('Your garden is clear, ready for a new beginning.'); }

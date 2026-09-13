@@ -22,10 +22,11 @@ PORT=4183 /Users/luwang/.cache/codex-runtimes/codex-primary-runtime/dependencies
 ## Implemented experience
 
 - Direct entry to the tree, including for reduced-motion users. The previous 烦恼即菩提 opening screen has been removed; old opening links fall back to the tree.
-- Add worries to a sunlit spring tree. An animated pointing-hand cue on the main trunk opens the leaves-and-flowers collection at `#garden`. The photographic foliage and blossoms are decorative; saved worries and intentions appear as cards in the collection, not on the tree. The treasure chest shows only the diamond count, with golden light spilling from its lid. Motion becomes static when reduced motion is enabled.
-- Repeating 4-7-8 guided breathing, pause/resume, return to tree, and finish. Moving the tab into the background pauses breathing automatically; resume manually.
+- Add worries to a sunlit spring tree. An animated pointing-hand cue on the main trunk opens the leaves-and-flowers collection at `#garden`. The photographic foliage and blossoms are decorative; saved worries and intentions appear on a separate illustrated Bodhi tree in the collection. The treasure chest shows only the diamond count, with golden light spilling from its lid. Motion becomes static when reduced motion is enabled.
+- Repeating 4-7-8 guided breathing, pause/resume, return to tree, and review your worries. Moving the tab into the background pauses breathing automatically; resume manually.
 - Choose a small action to turn a worry into a flower, or explicitly release it. No completion checklists.
-- Select any one or more intention flowers to harvest into one diamond. Only selected flowers are gathered; others remain. There is no five-flower threshold or tree-page harvest invitation. Treasure history retains each action and its date, including previously saved diamonds. Each diamond can be permanently deleted after confirmation.
+- The collection is a storybook Bodhi tree. Glowing worry leaves open the existing clarity dialog; saving a small step blooms that leaf in place. Flowers show their paired worry and intention. Large collections use additional branch views with eight items each.
+- One click harvests all current flowers into one diamond, including flowers on other branch views. There is no selection or five-flower threshold. Treasure history retains each worry, action and date, including previously saved diamonds. Each diamond can be permanently deleted after confirmation.
 - Local persistence, private JSON export, and an explicitly confirmed reset. Save failures keep the input intact; invalid saved data is never silently overwritten.
 
 ## Data
@@ -54,4 +55,4 @@ The test covers the complete user journey, persistence, mobile layout, reduced m
 - `design/visual-explorations/v4-purple/`: approved visual references and earlier opening revisions.
 - `design/IMPLEMENTATION.md`: defaults, limitations, and art-generation prompts.
 
-This version runs locally; it has not been published or packaged as a native mobile app. All visual-design history is preserved.
+The app is published with Sites and also runs locally; it has not been packaged as a native mobile app. All visual-design history is preserved.
