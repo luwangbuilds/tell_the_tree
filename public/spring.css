@@ -9,6 +9,8 @@
   --border: #dedbc9;
 }
 body { background: var(--paper); }
+.background-music { flex-shrink: 0; font-size: 12px; min-height: 44px; padding: 6px 8px; }
+.background-music[hidden] { display: none; }
 body:before { opacity: .012; }
 #app { overflow: clip; }
 .site-header { max-width: 1440px; height: 84px; border-color: #dfddcd; padding: 0 5%; }
@@ -29,6 +31,13 @@ body:before { opacity: .012; }
 .tree-scene { aspect-ratio: 4/5; margin: 0; align-self: start; border-radius: 28px; isolation: isolate; container-type: inline-size; }
 .tree-art-button { border-radius: inherit; overflow: hidden; }
 .tree-art { object-fit: cover; mix-blend-mode: normal; mask-image: none; }
+.tree-canopy-breeze { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 48% 83%; mask-image: linear-gradient(#000 0%,#000 48%,transparent 78%); animation: canopy-breeze 9s ease-in-out infinite; pointer-events: none; }
+@keyframes canopy-breeze {
+  0%,100% { transform: scale(1.002) skewX(-.12deg) rotate(-.06deg); }
+  42% { transform: scale(1.002) skewX(.18deg) rotate(.1deg); }
+  72% { transform: scale(1.002) skewX(.03deg) rotate(.01deg); }
+}
+@media(prefers-reduced-motion:reduce) { .tree-canopy-breeze { display: none; } }
 .tree-art-button:after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg,#fbf7ef 0%,#fbf7ef00 10%); pointer-events: none; }
 .tree-heading { padding-top: clamp(32px,5vw,90px); }
 .tree-heading h1 { max-width: 430px; font-size: clamp(38px,4.2vw,62px); line-height: 1.08; letter-spacing: -1.8px; }
@@ -268,18 +277,20 @@ blockquote:before, blockquote:after { color: #9aa574; }
   .toast { bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 .bodhi-page { max-width: 1040px; margin: auto; padding: 28px 24px 48px; }
-.bodhi-page .collection-heading { margin: 20px 0 12px; text-align: center; }
+.bodhi-page .collection-back { margin-bottom: 12px; }
+.bodhi-page .collection-heading { margin: 8px 0 12px; text-align: center; }
 .bodhi-page h1 { font-size: clamp(30px,4vw,46px); }
 .bodhi-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px 24px; font-size: 14px; color: #58663b; }
 .bodhi-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .bodhi-legend .icon { width: 20px; height: 20px; }
-.bodhi-stage { position: relative; aspect-ratio: 1241/1268; max-width: 680px; margin: 12px auto 0; isolation: isolate; }
-.bodhi-art { display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-.bodhi-node { position: absolute; left: var(--node-x); top: var(--node-y); transform: translate(-50%,-50%); width: clamp(44px,7vw,72px); height: clamp(44px,7vw,72px); padding: 0; border: 0; background: transparent; cursor: pointer; z-index: 2; border-radius: 50%; }
+.bodhi-stage { position: relative; aspect-ratio: 1241/1268; max-width: 680px; margin: 12px auto clamp(-88px, -12vw, -36px); isolation: isolate; background: var(--paper); clip-path: inset(0 0 13%); }
+.bodhi-art { display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: darken; clip-path: inset(0 0 13%); }
+.bodhi-node { position: absolute; left: var(--node-x); top: var(--node-y); transform: translate(-50%,-50%); width: clamp(58px,8.5vw,92px); height: clamp(58px,8.5vw,92px); padding: 0; border: 0; background: transparent; cursor: pointer; z-index: 2; border-radius: 50%; }
 .bodhi-symbol, .blooming-leaf { display: block; width: 100%; height: 100%; }
 .bodhi-symbol svg, .blooming-leaf svg { width: 100%; height: 100%; overflow: visible; }
 .worry-node .bodhi-symbol { filter: drop-shadow(0 0 3px #fffbd0) drop-shadow(0 0 7px #e8dc69); animation: leaf-edge-glow 3s ease-in-out var(--node-delay) infinite; }
 .flower-node .bodhi-symbol { filter: drop-shadow(0 0 4px #fff5ca) drop-shadow(0 0 6px #ebaeab); }
+.flower-node.harvest-ready .bodhi-symbol { filter: drop-shadow(0 0 8px #fff29a) drop-shadow(0 0 19px #f5c52c) drop-shadow(0 0 30px #f4d65b); animation: ready-flower-glow 2.6s ease-in-out var(--node-delay) infinite; }
 .bodhi-node:hover, .bodhi-node:focus-visible { z-index: 4; }
 .bodhi-node:focus-visible { outline: 2px solid #506035; outline-offset: 6px; }
 .node-label { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 190px; padding: 9px 12px; border-radius: 12px; background: #fffdf5; color: #354329; box-shadow: 0 4px 20px #34452126; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; pointer-events: none; opacity: 0; visibility: hidden; }
@@ -299,10 +310,22 @@ blockquote:before, blockquote:after { color: #9aa574; }
 .flower-detail { text-align: left; margin: 24px 0; }
 .single-flower { width: 76px; height: 76px; margin: 0 auto 16px; }
 .single-flower svg { width: 100%; height: 100%; }
+.single-flower.is-ready { filter: drop-shadow(0 0 14px #f5c52c) drop-shadow(0 0 28px #f4d65b); }
+.readiness-panel { margin: 8px 0 2px; padding-top: 20px; border-top: 1px solid #dcdbc6; text-align: left; }
+.readiness-panel>p { margin-bottom: 12px; color: #59643f; font-family: var(--serif); font-size: 17px; }
+.readiness-choices { display: grid; gap: 10px; }
+.readiness-choice { width: 100%; min-height: 64px; display: flex; align-items: center; gap: 13px; padding: 12px 14px; border: 1px solid #d9dbc6; border-radius: 15px; background: #fffdf6; text-align: left; }
+.readiness-choice:hover { border-color: #a7ad7f; background: #f5f2e5; }
+.readiness-choice.selected { border-color: #aa914f; background: #f3ecd6; box-shadow: inset 0 0 0 1px #d8c48c; }
+.readiness-mark { width: 28px; height: 28px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; background: #ecebdc; color: #667044; font-size: 17px; }
+.readiness-choice.selected .readiness-mark { background: #a78c48; color: #fffbea; }
+.readiness-choice strong { display: block; font-family: var(--serif); font-size: 16px; font-weight: 400; color: #485335; }
+.readiness-choice small { display: block; margin-top: 4px; color: #757760; font-size: 12px; line-height: 1.4; }
 .blooming-leaf { position: absolute; inset: 0; animation: leaf-into-bloom .9s ease-in forwards; }
 .blooming .bodhi-symbol { animation: flower-unfold 1.6s ease-out both; }
 @keyframes leaf-edge-glow { 50% { filter: drop-shadow(0 0 5px #fffbd0) drop-shadow(0 0 11px #e8dc69); } }
 @keyframes leaf-into-bloom { to { transform: scale(.2) rotate(28deg); opacity: 0; } }
 @keyframes flower-unfold { 0%,20% { transform: scale(.05) rotate(-35deg); opacity: 0; } 70% { transform: scale(1.22) rotate(8deg); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes ready-flower-glow { 50% { filter: drop-shadow(0 0 11px #fff29a) drop-shadow(0 0 24px #f5c52c) drop-shadow(0 0 38px #f4d65b); } }
 @media(max-width:640px) { .bodhi-page { padding: 20px 12px 28px; } .bodhi-page .eyebrow { font-size: 12px; } .bodhi-page .subtitle { font-size: 16px; } .bodhi-harvest { flex-direction: column; text-align: center; padding: 20px 14px; gap: 10px; } .bodhi-hint { margin-top: 16px; } .branch-navigation { gap: 10px; } .node-label { max-width: 145px; } }
-@media(prefers-reduced-motion:reduce) { .worry-node .bodhi-symbol, .blooming .bodhi-symbol, .blooming-leaf { animation: none; } }
+@media(prefers-reduced-motion:reduce) { .worry-node .bodhi-symbol, .flower-node.harvest-ready .bodhi-symbol, .blooming .bodhi-symbol, .blooming-leaf { animation: none; } }

@@ -1,7 +1,28 @@
-import { STORAGE_KEY, blankGarden, addWorry, releaseWorry, chooseAction, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from './model.js';
+import { STORAGE_KEY, blankGarden, addWorry, releaseWorry, chooseAction, setFlowerReady, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from './model.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
+const backgroundMusic = new Audio('/assets/forest-background.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.preload = 'none';
+backgroundMusic.volume = 0.3;
+let musicStarted = false;
+function updateMusicControl() {
+  const button = document.querySelector('.background-music');
+  if (!button) return;
+  button.hidden = !musicStarted;
+  button.textContent = backgroundMusic.paused ? 'Music off' : 'Music on';
+  button.setAttribute('aria-label', backgroundMusic.paused ? 'Play background music' : 'Pause background music');
+}
+function playBackgroundMusic() {
+  musicStarted = true;
+  backgroundMusic.play().then(updateMusicControl).catch(() => {
+    updateMusicControl();
+    toast('Music could not start. Use Music off to try again.');
+  });
+}
+backgroundMusic.addEventListener('play', updateMusicControl);
+backgroundMusic.addEventListener('pause', updateMusicControl);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const date = value => new Date(value).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -56,6 +77,8 @@ let branchPage = 0;
 const branchSlots = [[35, 16], [57, 11], [77, 25], [22, 28], [38, 36], [65, 34], [23, 48], [80, 49]];
 let draft = '';
 let breathInterval;
+let breathStartTimer;
+let breathCounting = false;
 let breathElapsed = 0;
 let breathStart = 0;
 let breathPaused = false;
@@ -83,7 +106,7 @@ function header() {
 function footer() {
   return `<footer class="site-footer"><span>A little space. A gentler pace.</span><button class="text-button" data-do="privacy">${icon('lock')} Just for you, on this device</button></footer>`;
 }
-function cleanup() { clearInterval(breathInterval); document.querySelectorAll('.leaf-flight').forEach(el => el.remove()); }
+function cleanup() { clearTimeout(breathStartTimer); clearInterval(breathInterval); breathCounting = false; document.querySelectorAll('.leaf-flight').forEach(el => el.remove()); }
 function navigate(next) { if (view === next) return; location.hash = next; }
 addEventListener('hashchange', () => {
   view = routes.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'tree';
@@ -93,13 +116,22 @@ function render() {
   cleanup();
   document.body.dataset.view = view;
   app.innerHTML = header() + (loadError ? `<div class="storage-banner" role="alert">Your saved garden needs attention. Nothing has been overwritten. <button data-do="privacy">Review saved data</button></div>` : '') + `<main id="main" tabindex="-1">${view === 'tree' ? treePage() : view === 'garden' ? collectionPage() : view === 'breathe' ? breathingPage() : view === 'treasure' ? treasurePage() : finishPage()}</main>` + footer();
+  const musicControl = document.createElement('button');
+  musicControl.className = 'background-music text-button';
+  musicControl.type = 'button';
+  musicControl.addEventListener('click', () => {
+    if (backgroundMusic.paused) playBackgroundMusic();
+    else backgroundMusic.pause();
+  });
+  document.querySelector('.site-header').append(musicControl);
+  updateMusicControl();
   if (view === 'breathe') startBreathing();
 }
 
 function treePage() {
   return `<section class="tree-page page-enter"><div class="tree-heading"><span class="eyebrow">YOUR QUIET LITTLE CORNER</span><h1>A little space to let go.</h1><p class="subtitle">A little space for what is on your mind.</p><span class="gold-line"></span></div>
-    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree-clear-sky.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /></div><button class="tree-heart" ${garden.breathingCompleted && (garden.leaves.length || garden.flowers.length) ? '' : 'hidden'} data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button>${garden.harvests.length ? `<button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div>` : ''}</div>
-    <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">Tell a worry to the tree</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div><button class="add-leaf" type="submit">Give it to the tree ${icon('check')}</button></form><button class="primary full" data-do="breathe">Take a breathing break ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
+    <div class="tree-scene"><div class="tree-art-button"><img src="/assets/spring-tree-clear-sky.webp" alt="A sunlit spring tree with green leaves and soft pink blossoms" class="tree-art" fetchpriority="high" /><img src="/assets/spring-tree-clear-sky.webp" class="tree-canopy-breeze" alt="" aria-hidden="true" /></div><button class="tree-heart" ${garden.breathingCompleted && (garden.leaves.length || garden.flowers.length) ? '' : 'hidden'} data-do="garden" aria-label="View your leaves and flowers"><svg class="tap-cue" viewBox="0 0 68 72" fill="none" aria-hidden="true"><circle class="tap-ripple" cx="28" cy="12" r="9" stroke="#fff6cd" stroke-width="1.5"/><g class="tap-hand" stroke="#8b7449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 36V15C24 9 32 9 32 15V29C32 24 40 24 40 30V32C40 27 48 28 48 34V36C48 31 55 32 55 38V44C55 52 50 59 44 61H32C29 61 26 59 24 56L14 41C11 35 17 31 21 36L24 40Z" fill="#fff9e9"/><path d="M32 29V39M40 32V40M48 36V42"/><path d="M31 55H44" stroke="#d0bb8b"/></g></svg></button>${garden.harvests.length ? `<button class="chest" data-do="treasure" aria-label="Open your diamonds, ${countText(garden.harvests.length, 'diamond')}">${chestIllustration()}</button><div class="chest-illumination" aria-hidden="true"><i></i><i></i><i></i><span class="diamond-count">${garden.harvests.length}</span></div>` : ''}</div>
+    <div class="tree-composer"><div class="section-label">${icon('leaf')} A PLACE TO LET IT OUT</div><form id="worry-form"><label for="worry">Tell a worry to the tree</label><div class="worry-input"><textarea id="worry" name="worry" rows="3" maxlength="1000" placeholder="You don’t have to find the perfect words…" required>${esc(draft)}</textarea></div><div class="input-note"><span>One worry, one leaf.</span><span id="word-count">${draft.length} / 1000</span></div><button class="add-leaf" type="submit">Give it to the tree ${icon('check')}</button></form><button class="primary full" data-do="breathe">Finish worrying, just breathe ${icon('arrow')}</button><div class="tree-summary"><button class="summary-item" data-do="leaves">${icon('leaf')} ${countText(garden.leaves.length, 'worry', 'worries')}</button><button class="summary-item" data-do="flowers">${icon('flower')} ${countText(garden.flowers.length, 'flower')}</button></div></div>
     </section>`;
 }
 function treeEntries() {
@@ -111,27 +143,28 @@ function openCollection(kind) {
   closeDialog();
   if (view !== 'garden') { navigate('garden'); return; }
   render();
-  document.querySelector('.bodhi-node, #harvest-all, .collection-back')?.focus({ preventScroll: true });
+  document.querySelector('.bodhi-node, #harvest-ready, .collection-back')?.focus({ preventScroll: true });
 }
 function collectionPage() {
   const entries = treeEntries();
+  const readyFlowers = garden.flowers.filter(flower => flower.readyAt);
   const pages = Math.max(1, Math.ceil(entries.length / branchSlots.length));
   branchPage = Math.min(Math.max(0, branchPage), pages - 1);
   const start = branchPage * branchSlots.length;
   const visible = entries.slice(start, start + branchSlots.length);
-  return `<section class="collection-page bodhi-page"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><span class="eyebrow">ONE SMALL STEP, SOMETHING GROWS</span><h1>Your leaves &amp; flowers.</h1><p class="subtitle">Tap a glowing leaf to find a little clarity.</p></div>
-    <div class="bodhi-legend"><span>${icon('leaf')} ${countText(garden.leaves.length, 'worry leaf', 'worry leaves')}</span><span>${icon('flower')} ${countText(garden.flowers.length, 'intention flower')}</span></div>
-    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-original-sparse.webp" alt="A hand-painted tree with delicate branches, sparse olive leaves and spreading roots" width="1241" height="1268" />
+  return `<section class="collection-page bodhi-page"><a class="text-button collection-back" href="#tree">${icon('back')} Back to your tree</a><div class="collection-heading"><h1>Your leaves &amp; flowers.</h1><p class="subtitle">Tap a glowing leaf to find a little clarity.</p></div>
+    <div class="bodhi-legend"><span>${icon('leaf')} ${countText(garden.leaves.length, 'worry leaf', 'worry leaves')}</span><span>${icon('flower')} ${countText(garden.flowers.length, 'intention flower')}</span>${readyFlowers.length ? `<span class="ready-legend">${icon('flower')} ${countText(readyFlowers.length, 'ready flower')}</span>` : ''}</div>
+    <div class="bodhi-stage" role="group" aria-label="Your Bodhi tree: worry leaves and intention flowers"><img class="bodhi-art" src="/assets/bodhi-compact-roots.webp" alt="A hand-painted tree with delicate branches, sparse olive leaves and compact roots" width="1241" height="1268" />
       ${visible.map((item, index) => {
         const [x, y] = branchSlots[index];
         const isLeaf = item.kind === 'leaf';
         const label = isLeaf ? item.text : item.action;
-        return `<button class="bodhi-node ${isLeaf ? 'worry-node' : 'flower-node'} ${x > 70 ? 'node-right' : x < 25 ? 'node-left' : ''}" style="--node-x:${x}%;--node-y:${y}%;--node-delay:${index * -.4}s" data-${isLeaf ? 'leaf' : 'flower'}="${item.id}" aria-label="${isLeaf ? 'Reflect on worry' : 'View intention'}: ${esc(label)}"><span class="bodhi-symbol" aria-hidden="true">${isLeaf ? leafSVG() : flowerSVG()}</span><span class="node-label" aria-hidden="true">${esc(label.length > 90 ? label.slice(0, 90) + '…' : label)}</span></button>`;
+        return `<button class="bodhi-node ${isLeaf ? 'worry-node' : `flower-node${item.readyAt ? ' harvest-ready' : ''}`} ${x > 70 ? 'node-right' : x < 25 ? 'node-left' : ''}" style="--node-x:${x}%;--node-y:${y}%;--node-delay:${index * -.4}s" data-${isLeaf ? 'leaf' : 'flower'}="${item.id}" aria-label="${isLeaf ? 'Reflect on worry' : item.readyAt ? 'Ready to harvest intention' : 'View intention'}: ${esc(label)}"><span class="bodhi-symbol" aria-hidden="true">${isLeaf ? leafSVG() : flowerSVG()}</span><span class="node-label" aria-hidden="true">${esc(label.length > 90 ? label.slice(0, 90) + '…' : label)}</span></button>`;
       }).join('')}
     </div>
     ${pages > 1 ? `<div class="branch-navigation" aria-label="Browse tree branches"><button class="text-button" data-do="previous-branches" ${branchPage === 0 ? 'disabled' : ''}>${icon('back')} Previous</button><span role="status">${start + 1}–${start + visible.length} of ${entries.length}</span><button class="text-button" data-do="next-branches" ${branchPage === pages - 1 ? 'disabled' : ''}>More branches ${icon('arrow')}</button></div>` : ''}
-    ${!entries.length ? `<div class="bodhi-empty"><h2>A little room to breathe.</h2><p>Give a worry to the tree to grow your first leaf.</p><a class="text-button" href="#tree">Tell the tree a worry ${icon('arrow')}</a></div>` : '<p class="bodhi-hint">Glowing leaves hold worries. Flowers hold your small steps.</p>'}
-    <div class="bodhi-harvest"><div><button class="primary" id="harvest-all" data-do="harvest-all" ${garden.flowers.length ? '' : 'disabled'}>Harvest all flowers${garden.flowers.length ? ` (${garden.flowers.length})` : ''} ${icon('arrow')}</button><p>${garden.flowers.length ? `All ${countText(garden.flowers.length, 'flower')} become one diamond.` : 'A flower grows when you choose a small step.'}</p></div><a class="text-button" href="#treasure">View your diamonds ${icon('box')}</a></div>
+    ${!entries.length ? `<div class="bodhi-empty"><h2>A little room to breathe.</h2><p>Give a worry to the tree to grow your first leaf.</p><a class="text-button" href="#tree">Tell the tree a worry ${icon('arrow')}</a></div>` : '<p class="bodhi-hint">Glowing leaves hold worries. Open a flower when you have taken its small step.</p>'}
+    <div class="bodhi-harvest"><div><button class="primary" id="harvest-ready" data-do="harvest-ready" ${readyFlowers.length ? '' : 'disabled'}>${readyFlowers.length ? `Harvest ready flowers (${readyFlowers.length})` : 'No flowers ready yet'} ${icon('arrow')}</button><p>${readyFlowers.length ? `${countText(readyFlowers.length, 'ready flower')} will become one diamond. Still-growing flowers stay on the tree.` : garden.flowers.length ? 'Mark a flower ready after you take its small step.' : 'A flower grows when you choose a small step.'}</p></div><a class="text-button" href="#treasure">View your diamonds ${icon('box')}</a></div>
   </section>`;
 }
 function bloomOnTree(leafId) {
@@ -148,23 +181,37 @@ function bloomOnTree(leafId) {
 function showFlower(flowerId) {
   const flower = garden.flowers.find(item => item.id === flowerId);
   if (!flower) return;
-  showDialog(`<div class="single-flower">${flowerSVG()}</div><span class="eyebrow">A SMALL STEP, IN BLOOM</span><h2 id="dialog-title">Your intention.</h2><div class="flower-detail">${intentionPair(flower)}</div><button class="primary full" data-do="close">Back to your tree</button>`);
+  showDialog(`<div class="single-flower ${flower.readyAt ? 'is-ready' : ''}">${flowerSVG()}</div><span class="eyebrow">${flower.readyAt ? 'READY TO HARVEST' : 'A SMALL STEP, IN BLOOM'}</span><h2 id="dialog-title">Your intention.</h2><div class="flower-detail">${intentionPair(flower)}</div><div class="readiness-panel"><p>Did you take this step?</p><div class="readiness-choices" role="group" aria-label="Flower readiness"><button class="readiness-choice ${flower.readyAt ? '' : 'selected'}" data-flower-ready="${flower.id}" data-ready="false" aria-pressed="${flower.readyAt ? 'false' : 'true'}"><span class="readiness-mark" aria-hidden="true">○</span><span><strong>Still growing</strong><small>Keep this intention on the tree.</small></span></button><button class="readiness-choice ${flower.readyAt ? 'selected' : ''}" data-flower-ready="${flower.id}" data-ready="true" aria-pressed="${flower.readyAt ? 'true' : 'false'}"><span class="readiness-mark" aria-hidden="true">✓</span><span><strong>I took this step</strong><small>Mark this flower ready to harvest.</small></span></button></div></div><button class="text-button later" data-do="close">Back to your tree</button>`);
 }
-function harvestAllFlowers() {
-  if (!garden.flowers.length) return;
-  if (!transact(() => harvestFlowers(garden, garden.flowers.map(flower => flower.id)))) return;
+function updateFlowerReadiness(flowerId, ready) {
+  if (!transact(() => setFlowerReady(garden, flowerId, ready))) return;
+  closeDialog(); render();
+  document.querySelector(`[data-flower="${flowerId}"]`)?.focus({ preventScroll: true });
+  toast(ready ? 'This flower is ready to harvest.' : 'This flower is still growing.');
+}
+function harvestReadyFlowers() {
+  const readyFlowers = garden.flowers.filter(flower => flower.readyAt);
+  if (!readyFlowers.length) return;
+  if (!transact(() => harvestFlowers(garden, readyFlowers.map(flower => flower.id)))) return;
   closeDialog(); render(); effect('harvest-effect');
   document.querySelector('.bodhi-harvest a')?.focus({ preventScroll: true });
-  toast('Your flowers became one diamond. Your worries and intentions are kept together.');
+  toast(`${readyFlowers.length === 1 ? 'Your ready flower became' : 'Your ready flowers became'} one diamond. Still-growing flowers remain on the tree.`);
 }
 function breathingPage() {
-  return `<section class="breathing-page page-enter"><div class="breathing-heading"><span class="eyebrow">A SOFTER RHYTHM</span><h1>Come back to your breath.</h1></div><div class="breath-orbit" id="breath-orbit"><div class="watercolor-rings"><i></i><i></i><i></i>${lotus}</div><div class="breath-copy"><p id="phase-label" aria-live="polite">Breathe in</p><span id="breath-number" aria-hidden="true">4</span><span id="breath-status">Slowly, through your nose</span></div></div><div class="breath-sequence"><span data-phase="inhale">Inhale <b>4</b></span><i>·</i><span data-phase="hold">Hold <b>7</b></span><i>·</i><span data-phase="exhale">Exhale <b>8</b></span></div><button class="pause-button" data-do="pause" aria-label="Pause breathing">${icon('pause')}</button><div class="breathing-actions"><button class="primary" data-do="tree">Return to the tree ${icon('arrow')}</button><button class="text-button" data-do="leaves">Review your worries</button></div></section>`;
+  return `<section class="breathing-page page-enter"><div class="breathing-heading"><span class="eyebrow">A SOFTER RHYTHM</span><h1>Focus on your breath.</h1></div><div class="breath-orbit" id="breath-orbit"><div class="watercolor-rings"><i></i><i></i><i></i>${lotus}</div><div class="breath-copy"><p id="phase-label" aria-live="polite">Get ready</p><span id="breath-number" aria-hidden="true">…</span><span id="breath-status">Your breath will begin in a moment</span></div></div><div class="breath-sequence"><span data-phase="inhale">Inhale <b>4</b></span><i>·</i><span data-phase="hold">Hold <b>7</b></span><i>·</i><span data-phase="exhale">Exhale <b>8</b></span></div><button class="pause-button" data-do="pause" aria-label="Breathing starts shortly" disabled>${icon('pause')}</button><div class="breathing-actions"><button class="primary" data-do="tree">Return to the tree ${icon('arrow')}</button><button class="text-button" data-do="leaves">Review your worries</button></div></section>`;
 }
 function startBreathing() {
+  clearTimeout(breathStartTimer); clearInterval(breathInterval);
   breathCompletionAttempted = false;
-  breathElapsed = 0; breathStart = performance.now(); breathPaused = document.hidden; lastPhase = '';
-  tickBreath(); breathInterval = setInterval(tickBreath, 100);
-  if (breathPaused) updatePauseButton();
+  breathElapsed = 0; breathStart = 0; breathPaused = document.hidden; breathCounting = false; lastPhase = '';
+  breathStartTimer = setTimeout(() => {
+    if (view !== 'breathe') return;
+    breathCounting = true; breathStart = performance.now(); breathPaused = document.hidden;
+    const pauseButton = document.querySelector('[data-do="pause"]');
+    pauseButton?.removeAttribute('disabled');
+    tickBreath(); breathInterval = setInterval(tickBreath, 100);
+    updatePauseButton();
+  }, 1000);
 }
 function tickBreath() {
   const seconds = (breathElapsed + (breathPaused ? 0 : performance.now() - breathStart)) / 1000;
@@ -186,11 +233,12 @@ function updatePauseButton() {
   button.setAttribute('aria-label', breathPaused ? 'Resume breathing' : 'Pause breathing'); button.innerHTML = icon(breathPaused ? 'play' : 'pause'); tickBreath();
 }
 function togglePause() {
+  if (!breathCounting) return;
   if (breathPaused) { breathStart = performance.now(); breathPaused = false; }
   else { breathElapsed += performance.now() - breathStart; breathPaused = true; }
   updatePauseButton();
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden && view === 'breathe' && !breathPaused) togglePause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && view === 'breathe' && breathCounting && !breathPaused) togglePause(); });
 
 function intentionPair(intention) {
   return `<span class="intention-pair"><small class="pair-label">Worry</small><span class="paired-worry">${intention.worry ? esc(intention.worry) : 'Original worry wasn’t saved for this older intention.'}</span><small class="pair-label">Intention</small><span class="paired-action">${esc(intention.action)}</span></span>`;
@@ -309,6 +357,7 @@ document.addEventListener('click', event => {
   const el = event.target.closest('button'); if (!el) return;
   if (el.dataset.leaf) return reflect(el.dataset.leaf);
   if (el.dataset.flower) return showFlower(el.dataset.flower);
+  if (el.dataset.flowerReady) return updateFlowerReadiness(el.dataset.flowerReady, el.dataset.ready === 'true');
   if (el.dataset.harvest) return showHarvest(el.dataset.harvest);
   if (el.dataset.deleteHarvest) return deleteHarvestPrompt(el.dataset.deleteHarvest);
   if (el.dataset.confirmDeleteHarvest) {
@@ -323,8 +372,8 @@ document.addEventListener('click', event => {
     closeDialog(); render(); document.querySelector('.bodhi-node, .collection-back')?.focus({ preventScroll: true }); effect('release-effect', rect); toast('Gently let go. There is room to breathe.'); return;
   }
   const actions = {
-    tree: () => navigate('tree'), breathe: () => navigate('breathe'), treasure: () => navigate('treasure'), finish: () => navigate('finish'), pause: togglePause,
-    close: closeDialog, garden: () => openCollection(), leaves: showLeaves, flowers: showFlowers, 'harvest-all': harvestAllFlowers, privacy, export: exportGarden,
+    tree: () => navigate('tree'), breathe: () => { playBackgroundMusic(); navigate('breathe'); }, treasure: () => navigate('treasure'), finish: () => navigate('finish'), pause: togglePause,
+    close: closeDialog, garden: () => openCollection(), leaves: showLeaves, flowers: showFlowers, 'harvest-ready': harvestReadyFlowers, privacy, export: exportGarden,
     'previous-branches': () => { branchPage--; openCollection(); },
     'next-branches': () => { branchPage++; openCollection(); },
     'reset-prompt': () => showDialog(`<div class="dialog-symbol">${icon('leaf')}</div><h2 id="dialog-title">Begin with a clear garden?</h2><p class="dialog-description">This permanently removes all worries, flowers, and diamonds saved in this browser. You can export a copy first.</p><button class="secondary full" data-do="export">Export a copy</button><button class="primary full danger-fill" data-do="confirm-reset">Yes, clear my garden</button><button class="text-button later" data-do="close">Keep my garden</button>`),

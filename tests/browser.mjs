@@ -17,7 +17,7 @@ try {
   assert.equal(await page.locator('.opening').count(), 0);
   assert.ok(await page.locator('.tree-heart').isHidden());
   assert.equal(await page.locator('.chest, .chest-illumination, .diamond-count').count(), 0);
-  assert.ok(await page.getByRole('button', { name: 'Take a breathing break' }).isVisible());
+  assert.ok(await page.getByRole('button', { name: 'Finish worrying, just breathe' }).isVisible());
   assert.equal(await page.locator('.tree-heart-light, .tree-heart-click').count(), 0);
   assert.equal(await page.locator('.tap-hand').evaluate(el => getComputedStyle(el).animationName), 'hand-tap');
 
@@ -37,12 +37,12 @@ try {
   assert.equal(await page.locator('.tree-marker').count(), 0);
   assert.equal(await page.locator('.tree-heart').count(), 1);
   assert.ok(await page.locator('.tree-heart').isHidden());
-  await page.getByRole('button', { name: 'Take a breathing break' }).click();
+  await page.getByRole('button', { name: 'Finish worrying, just breathe' }).click();
   await page.locator('.breathing-page').waitFor();
   await page.getByRole('button', { name: 'Return to the tree', exact: true }).click();
   await page.locator('#worry').waitFor();
   assert.ok(await page.locator('.tree-heart').isHidden());
-  await page.getByRole('button', { name: 'Take a breathing break' }).click();
+  await page.getByRole('button', { name: 'Finish worrying, just breathe' }).click();
   await page.locator('.breathing-page').waitFor();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('tell-the-tree.v1')).breathingCompleted === true);
   await page.getByRole('button', { name: 'Return to the tree', exact: true }).click();
@@ -80,27 +80,43 @@ try {
   assert.equal(await page.getByRole('checkbox').count(), 0);
   await page.locator('.flower-node').first().click();
   assert.ok(await page.locator('.flower-detail .paired-worry').textContent());
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /I took this step/ }).click();
+  assert.equal(await page.locator('.harvest-ready').count(), 1);
+  assert.match(await page.locator('#harvest-ready').textContent(), /Harvest ready flowers \(1\)/);
+  await page.locator('.harvest-ready').click();
+  await page.getByRole('button', { name: /Still growing/ }).click();
+  assert.equal(await page.locator('.harvest-ready').count(), 0);
+  assert.ok(await page.locator('#harvest-ready').isDisabled());
+  for (let i = 0; i < 5; i++) {
+    await page.locator('.flower-node:not(.harvest-ready)').first().click();
+    await page.getByRole('button', { name: /I took this step/ }).click();
+  }
+  assert.equal(await page.locator('.harvest-ready').count(), 5);
   await page.evaluate(() => { window.originalSave = Storage.prototype.setItem; Storage.prototype.setItem = () => { throw new Error('Quota'); }; });
-  await page.locator('#harvest-all').click();
+  await page.locator('#harvest-ready').click();
   assert.equal((await savedGarden()).flowers.length, 5);
   assert.equal((await savedGarden()).harvests.length, 0);
   assert.match(await page.locator('#toast').textContent(), /could not save/);
   await page.evaluate(() => { Storage.prototype.setItem = window.originalSave; });
-  await page.locator('#harvest-all').click();
+  await page.locator('#harvest-ready').click();
   let saved = await savedGarden();
   assert.equal(saved.flowers.length, 0);
   assert.equal(saved.harvests.length, 1);
   assert.equal(saved.harvests[0].actions.length, 5);
   assert.deepEqual(saved.harvests[0].actions.map(a => a.worry), ['Worry 1','Worry 2','Worry 3','Worry 4','Worry 5']);
-  assert.ok(await page.locator('#harvest-all').isDisabled());
+  assert.ok(await page.locator('#harvest-ready').isDisabled());
   await page.reload();
   await page.getByRole('link', { name: 'Treasure', exact: true }).click();
   await page.locator('.harvest-card').click();
   assert.equal(await page.locator('.action-history li').count(), 5);
   await page.keyboard.press('Escape');
   await page.getByRole('link', { name: 'Breathe', exact: true }).click();
-  await page.waitForTimeout(4300);
+  await page.locator('.breathing-page').waitFor();
+  assert.equal(await page.locator('h1').textContent(), 'Focus on your breath.');
+  assert.equal(await page.locator('#phase-label').textContent(), 'Get ready');
+  await page.waitForTimeout(700);
+  assert.equal(await page.locator('#phase-label').textContent(), 'Get ready');
+  await page.waitForFunction(() => document.querySelector('#phase-label')?.textContent === 'Hold gently', null, { timeout: 6000 });
   assert.equal(await page.locator('#phase-label').textContent(), 'Hold gently');
   await page.getByRole('button', { name: 'Pause breathing', exact: true }).click();
   const number = await page.locator('#breath-number').textContent();
@@ -135,7 +151,9 @@ try {
   await m.getByRole('button', { name: 'Let it bloom', exact: true }).click();
   assert.equal(await m.locator('.flower-node').count(), 1);
   assert.equal(await m.locator('.blooming').count(), 0);
-  await m.locator('#harvest-all').tap();
+  await m.locator('.flower-node').tap();
+  await m.getByRole('button', { name: /I took this step/ }).tap();
+  await m.locator('#harvest-ready').tap();
   await m.getByRole('heading', { name: 'A little room to breathe.' }).waitFor();
   assert.equal(await m.evaluate(() => JSON.parse(localStorage.getItem('tell-the-tree.v1')).harvests[0].actions.length), 1);
   assert.ok(await m.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -160,13 +178,14 @@ try {
       g = m.addWorry(g, 'Branch worry ' + i);
       if (i < 10) g = m.chooseAction(g, g.leaves.at(-1).id, 'Branch step ' + i);
     }
+    for (const flower of g.flowers) g = m.setFlowerReady(g, flower.id, true);
     localStorage.setItem(m.STORAGE_KEY, JSON.stringify(g));
   });
   await c.goto(base + '/#garden'); await c.reload();
   assert.equal(await c.locator('.bodhi-node').count(), 8);
   await c.locator('[data-do="next-branches"]').click();
   assert.equal(await c.locator('.bodhi-node').count(), 4);
-  await c.locator('#harvest-all').click();
+  await c.locator('#harvest-ready').click();
   const all = await c.evaluate(() => JSON.parse(localStorage.getItem('tell-the-tree.v1')));
   assert.equal(all.harvests[0].actions.length, 10);
   assert.equal(all.flowers.length, 0);
@@ -176,5 +195,5 @@ try {
   await c.locator('.storage-banner').waitFor();
   assert.equal(await c.evaluate(() => localStorage.getItem('tell-the-tree.v1')), 'broken');
   assert.deepEqual(errors, []);
-  console.log('PASS: glow entrance, leaf reflection/release/actions, all-flower and single-flower harvests, failed saves, persistence, treasure, breathing, mobile, reduced motion and escaped input.');
+  console.log('PASS: glow entrance, leaf reflection/release/actions, flower readiness and harvesting, failed saves, persistence, treasure, breathing, mobile, reduced motion and escaped input.');
 } finally { await browser.close(); }

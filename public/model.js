@@ -23,11 +23,26 @@ export function chooseAction(garden, leafId, action) {
     flowers: [...garden.flowers, { id: leaf.id, worry: leaf.text, action: clean(action), createdAt: now() }],
   };
 }
+export function setFlowerReady(garden, flowerId, ready) {
+  if (typeof ready !== 'boolean') throw new Error('Choose whether this flower is still growing or ready to harvest.');
+  if (!garden.flowers.some(flower => flower.id === flowerId)) throw new Error('That flower is no longer available.');
+  return {
+    ...garden,
+    flowers: garden.flowers.map(flower => {
+      if (flower.id !== flowerId) return flower;
+      const { readyAt, ...rest } = flower;
+      return ready ? { ...rest, readyAt: readyAt || now() } : rest;
+    }),
+  };
+}
 export function harvestFlowers(garden, flowerIds) {
   if (!Array.isArray(flowerIds) || !flowerIds.length) throw new Error('Choose at least one flower to harvest.');
   const selected = new Set(flowerIds);
   if (selected.size !== flowerIds.length || flowerIds.some(flowerId => !garden.flowers.some(flower => flower.id === flowerId))) {
     throw new Error('Some selected flowers are no longer available. Please choose again.');
+  }
+  if (flowerIds.some(flowerId => !garden.flowers.find(flower => flower.id === flowerId)?.readyAt)) {
+    throw new Error('Only flowers whose small steps were taken are ready to harvest.');
   }
   return {
     ...garden,
@@ -43,7 +58,8 @@ export function decodeGarden(raw) {
   const value = JSON.parse(raw);
   const record = item => item && typeof item.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id) && typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt));
   const string = item => typeof item === 'string' && item.trim().length > 0 && item.length <= 1000;
-  const action = item => record(item) && string(item.action) && (item.worry === undefined || string(item.worry));
+  const action = item => record(item) && string(item.action) && (item.worry === undefined || string(item.worry))
+    && (item.readyAt === undefined || (typeof item.readyAt === 'string' && Number.isFinite(Date.parse(item.readyAt))));
   if (!value || value.version !== 1 || (value.breathingCompleted !== undefined && typeof value.breathingCompleted !== 'boolean') || !Array.isArray(value.leaves) || !Array.isArray(value.flowers) || !Array.isArray(value.harvests)
     || !value.leaves.every(item => record(item) && string(item.text)) || !value.flowers.every(action)
     || !value.harvests.every(item => record(item) && Array.isArray(item.actions) && item.actions.length >= 1 && item.actions.every(action))) {

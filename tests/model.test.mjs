@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankGarden, addWorry, releaseWorry, chooseAction, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from '../public/model.js';
+import { blankGarden, addWorry, releaseWorry, chooseAction, setFlowerReady, harvestFlowers, deleteHarvest, decodeGarden, breathingPhase } from '../public/model.js';
 
 test('worries become actions with their original worry preserved', () => {
   const original = blankGarden();
@@ -11,11 +11,15 @@ test('worries become actions with their original worry preserved', () => {
   assert.equal(b.leaves.length, 0);
   assert.equal(b.flowers[0].action, 'Write one sentence');
   assert.equal(b.flowers[0].worry, 'A private worry');
+  const ready = setFlowerReady(b, b.flowers[0].id, true);
+  assert.ok(ready.flowers[0].readyAt);
+  assert.equal(setFlowerReady(ready, ready.flowers[0].id, false).flowers[0].readyAt, undefined);
   assert.throws(() => chooseAction(b, a.leaves[0].id, 'Again'));
 });
 test('legacy intentions remain readable and malformed worry text is rejected', () => {
   let g = addWorry(blankGarden(), 'Original worry');
   g = chooseAction(g, g.leaves[0].id, 'Small step');
+  g = setFlowerReady(g, g.flowers[0].id, true);
   g = harvestFlowers(g, [g.flowers[0].id]);
   assert.equal(decodeGarden(JSON.stringify(g)).harvests[0].actions[0].worry, 'Original worry');
   delete g.harvests[0].actions[0].worry;
@@ -40,6 +44,7 @@ test('harvest takes only selected flowers, preserves the others and cannot repea
   }
   g = addWorry(g, 'Still here');
   const selected = [g.flowers[1].id, g.flowers[4].id];
+  for (const flowerId of selected) g = setFlowerReady(g, flowerId, true);
   const result = harvestFlowers(g, selected);
   assert.deepEqual(result.flowers, g.flowers.filter(f => !selected.includes(f.id)));
   assert.equal(result.harvests.length, 1);
@@ -55,9 +60,11 @@ test('one flower can become a diamond and reload alongside legacy five-flower di
     g = addWorry(g, `Worry ${i}`);
     g = chooseAction(g, g.leaves[0].id, `Action ${i}`);
   }
+  for (const flower of g.flowers) g = setFlowerReady(g, flower.id, true);
   g = harvestFlowers(g, g.flowers.map(f => f.id));
   g = addWorry(g, 'A new worry');
   g = chooseAction(g, g.leaves[0].id, 'A single small step');
+  g = setFlowerReady(g, g.flowers[0].id, true);
   const result = harvestFlowers(g, [g.flowers[0].id]);
   assert.equal(result.flowers.length, 0);
   assert.deepEqual(result.harvests.map(h => h.actions.length), [1, 5]);
@@ -69,6 +76,8 @@ test('empty, duplicate, and stale selections cannot harvest any flowers', () => 
   let g = addWorry(blankGarden(), 'A worry');
   g = chooseAction(g, g.leaves[0].id, 'Take a walk');
   const flowerId = g.flowers[0].id;
+  assert.throws(() => harvestFlowers(g, [flowerId]));
+  g = setFlowerReady(g, flowerId, true);
   for (const selection of [undefined, [], [flowerId, flowerId], ['missing'], [flowerId, 'missing']]) {
     assert.throws(() => harvestFlowers(g, selection));
     assert.equal(g.flowers.length, 1);
@@ -81,6 +90,7 @@ test('a diamond can be deleted without changing other garden records', () => {
     garden = addWorry(garden, `Worry ${i}`);
     garden = chooseAction(garden, garden.leaves[0].id, `Action ${i}`);
   }
+  for (const flower of garden.flowers) garden = setFlowerReady(garden, flower.id, true);
   garden = harvestFlowers(garden, garden.flowers.map(f => f.id));
   const diamondId = garden.harvests[0].id;
   const result = deleteHarvest(garden, diamondId);
